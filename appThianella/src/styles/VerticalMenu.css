@@ -1,0 +1,39 @@
+.verticalMenu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: calc(100vh - 60px);
+  width: 200px;
+
+  background-color: var(--secundaryColor);
+  color: var(--backgroundColor);
+
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.verticalMenu.open {
+  transform: translateX(0);
+}
+
+.verticalMenuButton {
+  position: absolute;
+  top: 0;
+  right: -40px;
+
+  width: 40px;
+  height: 100%;
+
+  background-color: var(--secundaryHoverColor);
+  border: none;
+  cursor: pointer;
+}
+
+.verticalMenuList{
+  list-style: none;
+  padding: 20px;
+  margin: 0;
+}
+.verticalMenuList li {
+  margin-bottom: 16px;
+}
