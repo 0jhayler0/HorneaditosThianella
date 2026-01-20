@@ -23,4 +23,24 @@ router.get('/rawmaterials', async (req, res) => {
   }
 });
 
+// Obtenertodos los insumos
+router.get('/supplies', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM supplies');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener los usables
+router.get('/usable', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM usable');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
