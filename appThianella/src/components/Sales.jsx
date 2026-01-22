@@ -10,6 +10,19 @@ const Sales = () => {
   const [products, setProducts] = useState([]);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showClientsList, setShowClientsList] = useState(false);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/clients');
+        const data = await response.json();
+        setClients(data);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      }
+    };
+    fetchClients();
+  }, []);
   
   const menuItems = [
     { label: 'Ingresar clientes', onClick: () => setShowCreateClient(true) },
@@ -108,7 +121,9 @@ const Sales = () => {
             <label htmlFor="client">Cliente:</label>
             <select name="client" id="client">
               <option value="">Seleccionar...</option>
-              <option value="cliente1">Cliente #1</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
             </select>
           </div>
 
