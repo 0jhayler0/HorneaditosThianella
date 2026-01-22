@@ -10,7 +10,7 @@ import './styles/App.css'
 
 const App = () => {
   
-  const [option, setOption] = useState("")
+ const [option, setOption] = useState("")
 
     const renderContent = () => {
         switch(option) {

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react'
-
-import '../styles/VerticalMenu.css'
-import '../styles/Content.css'
-
+import VerticalMenuLayout from './VerticalMenuLayout';
 
 const Inventory = () => {
 
@@ -10,9 +7,6 @@ const Inventory = () => {
   const [rawMaterials, setRawMaterials] = useState([]);
   const [supplies, setSupplies] = useState([]);
   const [usable, setUsable] = useState([]);
-
-
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -61,21 +55,13 @@ const Inventory = () => {
     }
   };
 
-  return (
-    <div>
-      <aside className={`verticalMenu ${open ? "open" : ""}`}>
-        <button className='verticalMenuButton' 
-                onClick={() => setOpen(!open)} 
-                aria-expanded={open}
-        >
-          ☰
-        </button>
-        <ul className='verticalMenuList'>
-          <li><button>Productos Terminados</button></li>
-        </ul>
-      </aside>
+  const menuItems = [
+    { label: 'Cooming soon...', onClick: () => {} },
+  ];
 
-      <div className='content'>
+  return (
+      <div>
+    <VerticalMenuLayout menuItems={menuItems} />
         <table>
           <thead>
             <tr>
@@ -170,7 +156,7 @@ const Inventory = () => {
           </tbody>
         </table>
       </div>
-    </div>
+
   );
 }
 
