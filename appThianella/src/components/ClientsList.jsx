@@ -30,7 +30,7 @@ const ClientsList = ({ onClose }) => {
   if (error) return <div><p style={{ color: 'red' }}>Error: {error}</p></div>;
 
   return (
-    <div style={{ padding: '30px' }}>
+    <div>
       <button
         onClick={onClose}
         className='closeButton'
@@ -38,7 +38,8 @@ const ClientsList = ({ onClose }) => {
       >
         ✕
       </button>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={{ padding: '20px' }}>
+      <table>
         <thead>
           <tr>
             <th colSpan={8} className='tableTittle'>
@@ -79,6 +80,7 @@ const ClientsList = ({ onClose }) => {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

@@ -8,34 +8,52 @@ import '../styles/Content.css';
 const Sales = () => {
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [availableProducts, setAvailableProducts] = useState([]);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showClientsList, setShowClientsList] = useState(false);
 
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/api/clients');
-        const data = await response.json();
-        setClients(data);
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-      }
-    };
     fetchClients();
+    fetchProducts();
+    fetchSales();
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/clients');
+      const data = await res.json();
+      setClients(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/finishedproducts');
+      const data = await res.json();
+      setAvailableProducts(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchSales = async () => {
+    try {
+      const res = await fetch('http://localhost:3000/api/sales');
+      const data = await res.json();
+      setSales(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   
+
   const menuItems = [
     { label: 'Ingresar clientes', onClick: () => setShowCreateClient(true) },
     { label: 'Lista de clientes', onClick: () => setShowClientsList(true) },
-    { label: 'Historial de Ventas', onClick: () => {} },
-    { label: 'Reportes', onClick: () => {} }
-  ];
-
-  const productOptions = [
-    { value: 'pandequesox10', label: 'Pandequeso x10' },
-    { value: 'pandequesox5', label: 'Pandequeso x5' },
-    { value: 'palitos', label: 'Palitos' },
-    { value: 'trocitos', label: 'Trocitos' }
   ];
 
   const handleAddProduct = () => {
@@ -43,107 +61,198 @@ const Sales = () => {
   };
 
   const handleProductChange = (id, field, value) => {
-    setProducts(products.map(p => p.id === id ? { ...p, [field]: value } : p));
+    setProducts(products.map(p =>
+      p.id === id ? { ...p, [field]: value } : p
+    ));
   };
 
   const handleRemoveProduct = (id) => {
     setProducts(products.filter(p => p.id !== id));
   };
 
-  const handleClientCreated = (newClient) => {
-    console.log('Nuevo cliente creado:', newClient);
+  const handleClientCreated = () => {
     setShowCreateClient(false);
+    fetchClients();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const client_id = formData.get('client');
+    const mainProduct = formData.get('product');
+    const mainQuantity = parseInt(formData.get('quantity'));
+
+    if (!client_id || !mainProduct || !mainQuantity || mainQuantity <= 0) {
+      alert('Completa todos los campos');
+      return;
+    }
+
+    const productsToSend = [
+      { product_id: parseInt(mainProduct), quantity: mainQuantity }
+    ];
+
+    products.forEach(p => {
+      if (p.product && p.quantity && p.quantity > 0) {
+        productsToSend.push({
+          product_id: parseInt(p.product),
+          quantity: parseInt(p.quantity)
+        });
+      }
+    });
+
+    try {
+      const res = await fetch('http://localhost:3000/api/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: parseInt(client_id),
+          products: productsToSend
+        })
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert(result.error || 'Error al guardar la venta');
+        return;
+      }
+
+      alert('Venta guardada correctamente');
+      setProducts([]);
+      e.target.reset();
+
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión');
+    }
   };
 
   return (
     <div>
-      <VerticalMenuLayout menuItems={menuItems}/>
-      <div className='content'>
-        <form onSubmit={(e) => e.preventDefault()}>
-          <h1>Ingreso de ventas</h1>
+      <VerticalMenuLayout menuItems={menuItems} />
 
-          {/* Primer producto */}
-          <div className='formGroup'>
-            <label htmlFor="product">Producto:</label>
-            <select name="product" id="product">
+      <div className="content">
+        <form onSubmit={handleSubmit}>
+          <h1>INGRESO DE VENTAS</h1>
+
+          <div className="formGroup">
+            <label>Producto</label>
+            <select name="product">
               <option value="">Seleccionar...</option>
-              {productOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              {availableProducts.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} (Stock: {p.stock})
+                </option>
               ))}
             </select>
           </div>
 
-          <div className='formGroup'>
-            <input type="number" placeholder='Cantidad'/>
+          <div className="formGroup">
+            <input type="number" name="quantity" placeholder="Cantidad" />
           </div>
 
-
-          {/* Productos dinámicos agregados */}
-          {products.map((product) => (
-            <React.Fragment key={product.id}>
-              <button 
-                className='closeButton' 
-                type="button" 
-                onClick={() => handleRemoveProduct(product.id)} 
-                title="Eliminar producto"
-                style={{ marginBottom: '-35px' }}
+          {products.map(p => (
+            <React.Fragment key={p.id}>
+              <button
+                type="button"
+                className="closeButton"
+                onClick={() => handleRemoveProduct(p.id)}
               >
                 ✕
               </button>
 
-              <div className='formGroup'>
-                <label>Producto:</label>
-                <select 
-                  value={product.product}
-                  onChange={(e) => handleProductChange(product.id, 'product', e.target.value)}
+              <div className="formGroup">
+                <select
+                  value={p.product}
+                  onChange={e =>
+                    handleProductChange(p.id, 'product', e.target.value)
+                  }
                 >
                   <option value="">Seleccionar...</option>
-                  {productOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  {availableProducts.map(prod => (
+                    <option key={prod.id} value={prod.id}>
+                      {prod.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              <div className='formGroup'>
-                <input 
-                  type="number" 
-                  placeholder='Cantidad'
-                  value={product.quantity}
-                  onChange={(e) => handleProductChange(product.id, 'quantity', e.target.value)}
+              <div className="formGroup">
+                <input
+                  type="number"
+                  placeholder="Cantidad"
+                  value={p.quantity}
+                  onChange={e =>
+                    handleProductChange(p.id, 'quantity', e.target.value)
+                  }
                 />
               </div>
             </React.Fragment>
           ))}
 
-          <button type="button" onClick={handleAddProduct}>Agregar Productos</button>
+          <button type="button" onClick={handleAddProduct}>
+            Agregar Producto
+          </button>
 
-          <div className='formGroup'>
-            <label htmlFor="client">Cliente:</label>
-            <select name="client" id="client">
+          <div className="formGroup">
+            <label>Cliente</label>
+            <select name="client">
               <option value="">Seleccionar...</option>
-              {clients.map(client => (
-                <option key={client.id} value={client.id}>{client.name}</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
 
           <button type="submit">Guardar Venta</button>
         </form>
-
       </div>
       
-      {/* Panel Create Client */}
-      <div className={`createClientPanel ${showCreateClient ? 'visible' : ''}`}>
+      <table>
+          <thead>
+            <tr>
+              <th colSpan={4} className='tableTittle'>Historial de ventas</th>
+            </tr>
+            <tr>
+              <th>Cliente</th>
+              <th>Productos</th>
+              <th>Total</th>
+              <th>fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sales.map(sale => (
+              <tr key={sale.id}>
+                <td>{sale.client_name}</td>
+                <td>
+                  <ul>
+                    {sale.products.map((prod, i) => (
+                      <li key={i}>
+                        {prod.name} - Cantidad: {prod.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+                <td>${sale.total_amount}</td>
+                <td>{new Date(sale.sale_date).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      
 
-        <CreateClient onClientCreated={handleClientCreated} onClose={() => setShowCreateClient(false)} />
+      <div className={`createClientPanel ${showCreateClient ? 'visible' : ''}`}>
+        <CreateClient onClientCreated={handleClientCreated} onClose={() => setShowCreateClient(false)}/>
       </div>
 
-      {/* Panel Clients List */}
       <div className={`createClientPanel ${showClientsList ? 'visible' : ''}`}>
-        <ClientsList onClose={() => setShowClientsList(false)} />
+        <ClientsList  onClose={() => setShowClientsList(false)}/>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Sales
+export default Sales;
