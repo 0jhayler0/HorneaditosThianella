@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import VerticalMenuLayout from './VerticalMenuLayout';
 
+import CreateRawMaterials from './CreateRawMaterials';
+import LossIncome from './LossIncome';
+
+import '../styles/Content.css';
+
 const Inventory = () => {
 
   const [products, setProducts] = useState([]);
@@ -18,6 +23,21 @@ const Inventory = () => {
 
   const [editingUsable, setEditingUsable] = useState(null); 
   const [newUsablePrice, setNewUsablePrice] = useState('');
+
+  const [showCreateRawMaterials, setShowCreateRawMaterials] = useState(false);
+  const [showLossIncome, setShowLossIncome] = useState(false);
+
+  const [editingRawMaterialFull, setEditingRawMaterialFull] = useState(null);
+  const [rawMaterialForm, setRawMaterialForm] = useState({
+    name: '',
+    price: '',
+    brand: '',
+    packageweight: '',
+    stock: '',
+    measure: '',
+    description: ''
+  });
+
 
 
 
@@ -91,7 +111,8 @@ const Inventory = () => {
 
 
   const menuItems = [
-    { label: 'Cooming soon...', onClick: () => {} },
+    { label: 'Crear materias Primas', onClick: () => setShowCreateRawMaterials(true) },
+    { label: 'Registrar Perdidas', onClick: () => setShowLossIncome(true) },
   ];
 
   return (
@@ -149,7 +170,7 @@ const Inventory = () => {
         <table>
           <thead>
             <tr>
-              <th colSpan={7} className='tableTittle'>Materias Primas</th>
+              <th colSpan={9} className='tableTittle'>Materias Primas</th>
             </tr>
             <tr>
               <th>Nombre</th>
@@ -159,64 +180,114 @@ const Inventory = () => {
               <th>Stock</th>
               <th>Ud. de medida</th>
               <th>Descripcion</th>
+              <th>Ultima compra</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {rawMaterials.map((material) => (
               <tr key={material.id}>
                 <td>{material.name}</td>
-                <td>{material.price}
-                  <button
-                    className="editButton"
-                    onClick={() => {
-                      setEditingRawMaterial(material);
-                      setNewRawMaterialPrice(material.price);
-                    }}
-                  >
-                    Editar Precio
-                  </button>
-                 </td>
+                <td>{material.price}</td>
                 <td>{material.brand}</td>
                 <td>{material.packageweight}</td>
                 <td>{material.stock}</td>
                 <td>{material.measure}</td>
                 <td>{material.description}</td>
+                <td>{material.lastpurchase}</td>
+                <td>
+                  <button
+                    className="editButton"
+                    onClick={() => {
+                    setEditingRawMaterialFull(material);
+                    setRawMaterialForm(material);
+                    }}
+                  >
+                    Editar
+                  </button>
+                </td>
               </tr>
-            ))}
+         ))}
           </tbody>
         </table>
-            {editingRawMaterial && (
+         {editingRawMaterialFull && (
               <div className="modal">
                 <div className="modalContent">
-                  <h3>Editar precio</h3>
+                  <h3>Editar materia prima</h3>
+
+                  <input
+                    value={rawMaterialForm.name}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, name: e.target.value })}
+                    placeholder="Nombre"
+                  />
 
                   <input
                     type="number"
-                    value={newRawMaterialPrice}
-                    onChange={(e) => setNewRawMaterialPrice(e.target.value)}
+                    value={rawMaterialForm.price}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, price: e.target.value })}
+                    placeholder="Precio"
                   />
 
-                  <button className='saveButton'
+                  <input
+                    value={rawMaterialForm.brand}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, brand: e.target.value })}
+                    placeholder="Marca"
+                  />
+
+                  <input
+                    type="number"
+                    value={rawMaterialForm.packageweight}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, packageweight: e.target.value })}
+                    placeholder="Peso por paquete"
+                  />
+
+                  <input
+                    type="number"
+                    value={rawMaterialForm.stock}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, stock: e.target.value })}
+                    placeholder="Stock"
+                  />
+
+                  <input
+                    value={rawMaterialForm.measure}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, measure: e.target.value })}
+                    placeholder="Unidad de medida"
+                  />
+
+                  <textarea
+                    value={rawMaterialForm.description}
+                    onChange={e => setRawMaterialForm({ ...rawMaterialForm, description: e.target.value })}
+                    placeholder="Descripción"
+                  />
+
+                  <button
+                    className="saveButton"
                     onClick={async () => {
                       await fetch(
-                        `http://localhost:3000/api/rawmaterials/${editingRawMaterial.id}/price`,
+                        `http://localhost:3000/api/rawmaterials/${editingRawMaterialFull.id}`,
                         {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ price: parseFloat(newRawMaterialPrice) })
+                          body: JSON.stringify(rawMaterialForm)
                         }
                       );
-                      setEditingRawMaterial(null);
+
+                      setEditingRawMaterialFull(null);
                       fetchRawMaterials();
                     }}
                   >
                     Guardar
                   </button>
 
-                  <button onClick={() => setEditingRawMaterial(null)} className='cancelButton'>Cancelar</button>
+                  <button
+                    className="cancelButton"
+                    onClick={() => setEditingRawMaterialFull(null)}
+                  >
+                    Cancelar
+                  </button>
                 </div>
               </div>
-)}
+            )}
 
         <table>
             <thead>
@@ -301,8 +372,14 @@ const Inventory = () => {
             ))}
           </tbody>
         </table>
-      </div>
 
+        <div className={`createClientPanel ${showCreateRawMaterials ? 'visible' : '' }` }>
+          <CreateRawMaterials onClose={() => setShowCreateRawMaterials(false)}/>
+        </div>
+        <div className={`createClientPanel ${showLossIncome ? 'visible' : '' }` }>
+          <LossIncome onClose={() => setShowLossIncome(false)}/>
+        </div>
+      </div>
   );
 }
 

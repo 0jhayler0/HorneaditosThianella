@@ -157,7 +157,6 @@ const Createclient = ({ onClientCreated, onClose }) => {
             placeholder='Ingrese el correo electronico'
             value={formData.correo}
             onChange={handleChange}
-            required
           />
           
           <button type="submit" disabled={loading}>
