@@ -77,20 +77,18 @@ router.post('/pay-day', async (req, res) => {
 
     // Verificar cartera
     const wallet = await client.query(
-      'SELECT COALESCE(balance, 0) AS balance FROM company_wallet LIMIT 1'
+      'SELECT COALESCE(balance, 0) AS balance FROM company_wallet ORDER BY id LIMIT 1'
     );
 
     if (wallet.rows.length === 0) {
       throw new Error('Cartera no configurada');
     }
 
-    if (wallet.rows[0].balance < salary) {
-      throw new Error('Fondos insuficientes');
-    }
-
-    // Descontar cartera
+    // Descontar cartera (permitir saldo negativo)
     await client.query(
-      'UPDATE company_wallet SET balance = COALESCE(balance, 0) - $1',
+      `UPDATE company_wallet
+       SET balance = COALESCE(balance, 0) - $1
+       WHERE id = (SELECT id FROM company_wallet ORDER BY id LIMIT 1)`,
       [salary]
     );
 

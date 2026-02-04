@@ -30,9 +30,20 @@ const CreateRawMaterials = ({ onClose }) => {
 
       if (!res.ok) throw new Error('Error al crear materia prima');
 
+      alert('Materia prima creada exitosamente');
+      setForm({
+        name: '',
+        price: '',
+        brand: '',
+        stock: 0,
+        measure: '',
+        packageweight: '',
+        description: ''
+      });
       onClose();
     } catch (err) {
       console.error(err);
+      alert('Error al crear materia prima: ' + err.message);
     }
   };
 
@@ -43,25 +54,28 @@ const CreateRawMaterials = ({ onClose }) => {
       <form className="formGroup" onSubmit={handleSubmit}>
         <h1>Creación de materias primas</h1>
 
-        <input name="name" onChange={handleChange} placeholder="Nombre" />
-        <input name="price" type="number" onChange={handleChange} placeholder="Precio por paquete" />
-        <input name="brand" onChange={handleChange} placeholder="Marca" />
+        <input name="name" value={form.name} onChange={handleChange} placeholder="Nombre" />
+        <input name="price" type="number" value={form.price} onChange={handleChange} placeholder="Precio por paquete" />
+        <input name="brand" value={form.brand} onChange={handleChange} placeholder="Marca" />
 
         <input
           name="packageweight"
           type="number"
+          value={form.packageweight}
           onChange={handleChange}
           placeholder="Peso por paquete"
         />
 
         <input
           name="measure"
+          value={form.measure}
           onChange={handleChange}
           placeholder="Unidad de medida (gr/ml)"
         />
 
         <input
           name="description"
+          value={form.description}
           onChange={handleChange}
           placeholder="Descripción"
         />

@@ -7,12 +7,13 @@ import Purchases from './components/Purchases'
 import Payments from './components/Payments'
 import Colaborators from './components/Colaborators'
 import Wallet from './components/Wallet'
+import History from './components/History'
 import Welcome from './components/Welcome'
 
 import './styles/App.css'
 
-const App = () => {
-  
+const App = ({ onLogout, user }) => {
+
  const [option, setOption] = useState("")
 
     const renderContent = () => {
@@ -28,14 +29,16 @@ const App = () => {
             case "payments":
                 return < Payments />
             case "Colaborators":
-                return <Colaborators />
+                return < Colaborators />
             case "Wallet":
-                return <Wallet />
+                return < Wallet />
+            case "History":
+                return < History />
             default:
                 return < Welcome />
         }
     }
-    
+
     return (
         <div className='principalContainer'>
         <nav className='menuContainer'>
@@ -46,13 +49,15 @@ const App = () => {
             <button onClick={() => setOption("payments")}>Pagos</button>
             <button onClick={() => setOption("Colaborators")}>Colaboradores</button>
             <button onClick={() => setOption("Wallet")}>Cartera</button>
+            <button onClick={() => setOption("History")}>Historial</button>
+            <button onClick={onLogout} style={{ marginLeft: 'auto' }}>Cerrar Sesión</button>
         </nav>
         <div className='contentContainer'>
             {renderContent()}
         </div>
     </div>
   )
-  
+
 }
 
 export default App

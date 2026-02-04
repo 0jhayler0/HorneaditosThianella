@@ -33,6 +33,26 @@ router.get('/supplies', async (req, res) => {
   }
 });
 
+// Crear insumo
+router.post('/supplies', async (req, res) => {
+  const { name, price, uds } = req.body;
+
+  if (!name || !price || !uds) {
+    return res.status(400).json({ error: 'Datos obligatorios faltantes' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO supplies (name, price, stock, uds) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name, price, 0, uds]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Obtener los usables
 router.get('/usable', async (req, res) => {
   try {

@@ -5,16 +5,21 @@
 }
 
 :root {
-    /* COLORS */
-    --textColor: #373737;
-    --secundaryColor: #6B6A5E;
-    --secundaryHoverColor: #5B5A4E;
-    --accentColor: #C2B97F;
-    --accentHoverColor: #B2A96F;
-    --backgroundColor: #F5F4EE;
-    --sidebarColor: #dbd29e;
-    --sidebarHoverColor: #9C9564;
+  /* Texto */
+  --textColor: #2F2A23;           /* gris muy oscuro, cálido */
+  --secondaryColor: #6A5F4B;      /* marrón grisáceo cálido */
+  --secondaryHoverColor: #5A5040;
+
+  /* Accent */
+  --accentColor: #D99600;
+  --accentHoverColor: #B87F00;    /* mismo tono, más oscuro */
+
+  /* Fondos */
+  --backgroundColor: #F6F3EC;     /* beige claro */
+  --sidebarColor: #e4e3e2;        /* beige dorado */
+  --sidebarHoverColor: #c9c8c4;   /* dorado apagado */
 }
+
 
 .principalContainer {
     display: flex;
@@ -44,7 +49,8 @@
     border: none;
     color: var(--backgroundColor);
     font-size: 16px;
-    font-weight: bold;
+    /* font-weight: bold; */
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     cursor: pointer;
     padding: 10px 20px;
     transition: background-color 0.3s, color 0.3s;
@@ -63,6 +69,51 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+/* Login transition animation */
+.login-enter {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.login-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.login-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.login-exit-active {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.app-enter {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.app-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.app-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.app-exit-active {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 

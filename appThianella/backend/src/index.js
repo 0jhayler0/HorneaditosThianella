@@ -12,6 +12,8 @@ const purchasesRouter = require('../routes/purchases');
 const recipesRouter = require('../routes/recipes');
 const colaboratorsRouter = require('../routes/colaborators');
 const walletRouter = require('../routes/wallet');
+const historyRouter = require('../routes/history');
+const authRouter = require('../routes/auth');
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use('/api/purchases', purchasesRouter);
 app.use('/api/recipes', recipesRouter);
 app.use('/api/colaborators', colaboratorsRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/history', historyRouter);
+app.use('/api', authRouter);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import VerticalMenuLayout from './VerticalMenuLayout';
 
 import CreateRawMaterials from './CreateRawMaterials';
+import CreateSupplies from './CreateSupplies';
 import LossIncome from './LossIncome';
 
 import '../styles/Content.css';
@@ -26,6 +27,7 @@ const Inventory = () => {
 
   const [showCreateRawMaterials, setShowCreateRawMaterials] = useState(false);
   const [showLossIncome, setShowLossIncome] = useState(false);
+  const [showCreateSupplies, setShowCreateSupplies] = useState(false)
 
   const [editingRawMaterialFull, setEditingRawMaterialFull] = useState(null);
   const [rawMaterialForm, setRawMaterialForm] = useState({
@@ -112,7 +114,8 @@ const Inventory = () => {
 
   const menuItems = [
     { label: 'Crear materias Primas', onClick: () => setShowCreateRawMaterials(true) },
-    { label: 'Registrar Perdidas', onClick: () => setShowLossIncome(true) },
+    { label: 'Crear Insumos', onClick: () => setShowCreateSupplies(true) },
+    { label: 'Registrar Perdidas', onClick: () => setShowLossIncome(true) }
   ];
 
   return (
@@ -374,10 +377,13 @@ const Inventory = () => {
         </table>
 
         <div className={`createClientPanel ${showCreateRawMaterials ? 'visible' : '' }` }>
-          <CreateRawMaterials onClose={() => setShowCreateRawMaterials(false)}/>
+          <CreateRawMaterials onClose={() => { setShowCreateRawMaterials(false); fetchRawMaterials(); }}/>
         </div>
         <div className={`createClientPanel ${showLossIncome ? 'visible' : '' }` }>
           <LossIncome onClose={() => setShowLossIncome(false)}/>
+        </div>
+        <div className={`createClientPanel ${showCreateSupplies ? 'visible' : ''}`}>
+          <CreateSupplies onClose={() => setShowCreateSupplies(false)} />  
         </div>
       </div>
   );
