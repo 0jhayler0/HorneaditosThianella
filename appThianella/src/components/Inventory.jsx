@@ -3,6 +3,7 @@ import VerticalMenuLayout from './VerticalMenuLayout';
 
 import CreateRawMaterials from './CreateRawMaterials';
 import CreateSupplies from './CreateSupplies';
+import CreateFinishedProducts from './CreateFinishedProducts';
 import LossIncome from './LossIncome';
 
 import '../styles/Content.css';
@@ -22,12 +23,13 @@ const Inventory = () => {
   const [editingSupply, setEditingSupply] = useState(null);
   const [newSupplyPrice, setNewSupplyPrice] = useState('');
 
-  const [editingUsable, setEditingUsable] = useState(null); 
+  const [editingUsable, setEditingUsable] = useState(null);
   const [newUsablePrice, setNewUsablePrice] = useState('');
 
   const [showCreateRawMaterials, setShowCreateRawMaterials] = useState(false);
   const [showLossIncome, setShowLossIncome] = useState(false);
-  const [showCreateSupplies, setShowCreateSupplies] = useState(false)
+  const [showCreateSupplies, setShowCreateSupplies] = useState(false);
+  const [showCreateFinishedProducts, setShowCreateFinishedProducts] = useState(false);
 
   const [editingRawMaterialFull, setEditingRawMaterialFull] = useState(null);
   const [rawMaterialForm, setRawMaterialForm] = useState({
@@ -40,8 +42,19 @@ const Inventory = () => {
     description: ''
   });
 
+  const [editingSupplyFull, setEditingSupplyFull] = useState(null);
+  const [supplyForm, setSupplyForm] = useState({
+    name: '',
+    price: '',
+    uds: '',
+    stock: ''
+  });
 
-
+  const [editingUsableFull, setEditingUsableFull] = useState(null);
+  const [usableForm, setUsableForm] = useState({
+    name: '',
+    stock: ''
+  });
 
   useEffect(() => {
     fetchProducts();
@@ -111,10 +124,10 @@ const Inventory = () => {
   }
 };
 
-
   const menuItems = [
     { label: 'Crear materias Primas', onClick: () => setShowCreateRawMaterials(true) },
     { label: 'Crear Insumos', onClick: () => setShowCreateSupplies(true) },
+    { label: 'Crear Productos Terminados', onClick: () => setShowCreateFinishedProducts(true) },
     { label: 'Registrar Perdidas', onClick: () => setShowLossIncome(true) }
   ];
 
@@ -168,7 +181,6 @@ const Inventory = () => {
             </div>
           </div>
         )}
-
 
         <table>
           <thead>
@@ -295,32 +307,34 @@ const Inventory = () => {
         <table>
             <thead>
             <tr>
-              <th colSpan={4} className='tableTittle'>Insumos</th>
+              <th colSpan={5} className='tableTittle'>Insumos</th>
             </tr>
             <tr>
               <th>Nombre</th>
               <th>Precio por paquete</th>
               <th>uds por paquete</th>
               <th>Stock</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {supplies.map((supply) => (
               <tr key={supply.id}>
                 <td>{supply.name}</td>
-                <td>{supply.price}
-                    <button
-                      className="editButton"
-                      onClick={() => {
-                        setEditingSupply(supply);
-                        setNewSupplyPrice(supply.price);
-                      }}
-                    >
-                      Editar Precio
-                    </button>
-                </td>
+                <td>{supply.price}</td>
                 <td>{supply.uds}</td>
                 <td>{supply.stock}</td>
+                <td>
+                  <button
+                    className="editButton"
+                    onClick={() => {
+                      setEditingSupplyFull(supply);
+                      setSupplyForm(supply);
+                    }}
+                  >
+                    Editar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -356,25 +370,145 @@ const Inventory = () => {
               </div>
             )}
 
+            {editingSupplyFull && (
+              <div className="modal">
+                <div className="modalContent">
+                  <h3>Editar insumo</h3>
+
+                  <input
+                    value={supplyForm.name}
+                    onChange={e => setSupplyForm({ ...supplyForm, name: e.target.value })}
+                    placeholder="Nombre"
+                  />
+
+                  <input
+                    type="number"
+                    value={supplyForm.price}
+                    onChange={e => setSupplyForm({ ...supplyForm, price: e.target.value })}
+                    placeholder="Precio"
+                  />
+
+                  <input
+                    type="number"
+                    value={supplyForm.uds}
+                    onChange={e => setSupplyForm({ ...supplyForm, uds: e.target.value })}
+                    placeholder="Uds por paquete"
+                  />
+
+                  <input
+                    type="number"
+                    value={supplyForm.stock}
+                    onChange={e => setSupplyForm({ ...supplyForm, stock: e.target.value })}
+                    placeholder="Stock"
+                  />
+
+                  <button
+                    className="saveButton"
+                    onClick={async () => {
+                      await fetch(
+                        `http://localhost:3000/api/supplies/${editingSupplyFull.id}`,
+                        {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(supplyForm)
+                        }
+                      );
+
+                      setEditingSupplyFull(null);
+                      fetchSupplies();
+                    }}
+                  >
+                    Guardar
+                  </button>
+
+                  <button
+                    className="cancelButton"
+                    onClick={() => setEditingSupplyFull(null)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
         <table>
           <thead>
             <tr>
-              <th colSpan={2} className='tableTittle'>usables y maquinaria</th>
+              <th colSpan={3} className='tableTittle'>usables y maquinaria</th>
             </tr>
             <tr>
               <th>Nombre</th>
               <th>Stock</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {usable.map((usable) => (
-              <tr key={usable.id}>
-                <td>{usable.name}</td>
-                <td>{usable.stock}</td>
+            {usable.map((usableItem) => (
+              <tr key={usableItem.id}>
+                <td>{usableItem.name}</td>
+                <td>{usableItem.stock}</td>
+                <td>
+                  <button
+                    className="editButton"
+                    onClick={() => {
+                      setEditingUsableFull(usableItem);
+                      setUsableForm(usableItem);
+                    }}
+                  >
+                    Editar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {editingUsableFull && (
+          <div className="modal">
+            <div className="modalContent">
+              <h3>Editar usable</h3>
+
+              <input
+                value={usableForm.name}
+                onChange={e => setUsableForm({ ...usableForm, name: e.target.value })}
+                placeholder="Nombre"
+              />
+
+              <input
+                type="number"
+                value={usableForm.stock}
+                onChange={e => setUsableForm({ ...usableForm, stock: e.target.value })}
+                placeholder="Stock"
+              />
+
+              <button
+                className="saveButton"
+                onClick={async () => {
+                  await fetch(
+                    `http://localhost:3000/api/usable/${editingUsableFull.id}`,
+                    {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(usableForm)
+                    }
+                  );
+
+                  setEditingUsableFull(null);
+                  fetchUsable();
+                }}
+              >
+                Guardar
+              </button>
+
+              <button
+                className="cancelButton"
+                onClick={() => setEditingUsableFull(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className={`createClientPanel ${showCreateRawMaterials ? 'visible' : '' }` }>
           <CreateRawMaterials onClose={() => { setShowCreateRawMaterials(false); fetchRawMaterials(); }}/>
@@ -385,9 +519,11 @@ const Inventory = () => {
         <div className={`createClientPanel ${showCreateSupplies ? 'visible' : ''}`}>
           <CreateSupplies onClose={() => setShowCreateSupplies(false)} />  
         </div>
+        <div className={`createClientPanel ${showCreateFinishedProducts ? 'visible' : ''}`}>
+          <CreateFinishedProducts onClose={() => { setShowCreateFinishedProducts(false); fetchProducts(); }} />
+        </div>
       </div>
   );
 }
-
 
 export default Inventory

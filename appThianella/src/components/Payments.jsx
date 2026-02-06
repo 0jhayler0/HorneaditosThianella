@@ -6,6 +6,7 @@ const Payments = ({ onClose }) => {
   const [clientId, setClientId] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('caja_menor');
 
   useEffect(() => {
     fetch('http://localhost:3000/api/clients')
@@ -27,7 +28,8 @@ const Payments = ({ onClose }) => {
       body: JSON.stringify({
         client_id: parseInt(clientId),
         amount: parseFloat(amount),
-        notes
+        notes,
+        payment_method: paymentMethod
       })
     });
 
@@ -42,11 +44,11 @@ const Payments = ({ onClose }) => {
     setClientId('');
     setAmount('');
     setNotes('');
+    setPaymentMethod('caja_menor');
   };
 
   return (
     <div className="content">
-      <button className="closeButton" onClick={onClose}>✕</button>
 
       <form onSubmit={handleSubmit}>
         <h1>Registrar pago</h1>
@@ -67,6 +69,13 @@ const Payments = ({ onClose }) => {
           value={amount}
           onChange={e => setAmount(e.target.value)}
         />
+
+        <label>Método de pago</label>
+        <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+          <option value="caja_menor">Caja menor (Efectivo)</option>
+          <option value="caja_mayor">Caja mayor (Cuenta David)</option>
+          <option value="cuenta_bancaria">Cuenta bancaria</option>
+        </select>
 
         <textarea
           placeholder="Notas (opcional)"

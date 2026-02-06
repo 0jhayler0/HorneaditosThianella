@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, role, daily_salary
+      `SELECT id, name, role, daily_salary, hourly_rate
        FROM colaborators
        WHERE active = true
        ORDER BY name`
@@ -17,7 +17,6 @@ router.get('/', async (req, res) => {
 
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -26,7 +25,7 @@ router.get('/', async (req, res) => {
  * CREAR COLABORADOR
  */
 router.post('/', async (req, res) => {
-  const { name, role, daily_salary } = req.body;
+  const { name, role, daily_salary, hourly_rate = 0 } = req.body;
 
   if (!name || !daily_salary) {
     return res.status(400).json({ error: 'Datos incompletos' });
@@ -34,86 +33,45 @@ router.post('/', async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO colaborators (name, role, daily_salary)
-       VALUES ($1, $2, $3)`,
-      [name, role || null, daily_salary]
+      `INSERT INTO colaborators (name, role, daily_salary, hourly_rate)
+       VALUES ($1, $2, $3, $4)`,
+      [name, role || null, daily_salary, hourly_rate]
     );
 
     res.json({ message: 'Colaborador creado correctamente' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
 /**
- * PAGAR EL DÍA A UN COLABORADOR
- * - Descuenta de la cartera
- * - Guarda historial
+ * PAGAR DÍA
  */
 router.post('/pay-day', async (req, res) => {
   const { colaborator_id } = req.body;
-
-  if (!colaborator_id) {
-    return res.status(400).json({ error: 'Colaborador inválido' });
-  }
 
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    // Obtener salario
     const colab = await client.query(
       'SELECT daily_salary FROM colaborators WHERE id = $1 AND active = true',
       [colaborator_id]
     );
 
-    if (colab.rows.length === 0) {
-      throw new Error('Colaborador no encontrado');
-    }
+    if (colab.rows.length === 0) throw new Error('Colaborador no encontrado');
 
-    const salary = colab.rows[0].daily_salary;
+    const amount = colab.rows[0].daily_salary;
 
-    // Verificar cartera
-    const wallet = await client.query(
-      'SELECT COALESCE(balance, 0) AS balance FROM company_wallet ORDER BY id LIMIT 1'
-    );
-
-    if (wallet.rows.length === 0) {
-      throw new Error('Cartera no configurada');
-    }
-
-    // Descontar cartera (permitir saldo negativo)
-    await client.query(
-      `UPDATE company_wallet
-       SET balance = COALESCE(balance, 0) - $1
-       WHERE id = (SELECT id FROM company_wallet ORDER BY id LIMIT 1)`,
-      [salary]
-    );
-
-    // Registrar movimiento en wallet_movements
-    await client.query(
-      `INSERT INTO wallet_movements (amount, direction, type, reference_id, note, created_at)
-       VALUES ($1, 'out', 'pago_colaborador', $2, 'Pago diario a colaborador', NOW())`,
-      [salary, colaborator_id]
-    );
-
-    // Registrar pago
-    await client.query(
-      `INSERT INTO colaborator_payments
-       (colaborator_id, amount)
-       VALUES ($1, $2)`,
-      [colaborator_id, salary]
-    );
+    await payFromWallet(client, colaborator_id, amount, 'Pago diario');
 
     await client.query('COMMIT');
 
-    res.json({ message: 'Pago realizado correctamente' });
+    res.json({ message: 'Pago diario realizado' });
 
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
@@ -121,44 +79,99 @@ router.post('/pay-day', async (req, res) => {
 });
 
 /**
- * HISTORIAL DE PAGOS DE UN COLABORADOR
+ * PAGAR POR HORAS
  */
-router.get('/:id/payments', async (req, res) => {
-  const { id } = req.params;
+router.post('/pay-hours', async (req, res) => {
+  const { colaborator_id, hours } = req.body;
+
+  if (!hours || hours <= 0) {
+    return res.status(400).json({ error: 'Horas inválidas' });
+  }
+
+  const client = await pool.connect();
 
   try {
-    const result = await pool.query(
-      `SELECT amount, payment_date, note
-       FROM colaborator_payments
-       WHERE colaborator_id = $1
-       ORDER BY payment_date DESC`,
-      [id]
+    await client.query('BEGIN');
+
+    const colab = await client.query(
+      'SELECT hourly_rate FROM colaborators WHERE id = $1 AND active = true',
+      [colaborator_id]
     );
 
-    res.json(result.rows);
+    if (colab.rows.length === 0) throw new Error('Colaborador no encontrado');
+
+    const rate = colab.rows[0].hourly_rate || 0;
+    const amount = rate * hours;
+
+    await payFromWallet(client, colaborator_id, amount, `Pago por ${hours} horas`);
+
+    await client.query('COMMIT');
+
+    res.json({ message: 'Pago por horas realizado', total: amount });
+
   } catch (err) {
-    console.error(err);
+    await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 
 /**
- * DESACTIVAR COLABORADOR (NO BORRAR)
+ * FUNCIÓN REUTILIZABLE DE PAGO
  */
-router.put('/:id/deactivate', async (req, res) => {
+async function payFromWallet(client, colaborator_id, amount, note) {
+  await client.query(
+    `UPDATE company_wallet
+     SET balance = COALESCE(balance, 0) - $1
+     WHERE id = (SELECT id FROM company_wallet ORDER BY id LIMIT 1)`,
+    [amount]
+  );
+
+  await client.query(
+    `INSERT INTO wallet_movements (amount, direction, type, reference_id, note)
+     VALUES ($1, 'out', 'pago_colaborador', $2, $3)`,
+    [amount, colaborator_id, note]
+  );
+
+  await client.query(
+    `INSERT INTO colaborator_payments (colaborator_id, amount, note)
+     VALUES ($1, $2, $3)`,
+    [colaborator_id, amount, note]
+  );
+}
+/**
+ * EDITAR COLABORADOR
+ */
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
+  const { name, role, daily_salary, hourly_rate } = req.body;
+
+  if (!name || daily_salary == null || hourly_rate == null) {
+    return res.status(400).json({ error: 'Datos inválidos' });
+  }
 
   try {
-    await pool.query(
-      'UPDATE colaborators SET active = false WHERE id = $1',
-      [id]
+    const result = await pool.query(
+      `UPDATE colaborators
+       SET name = $1,
+           role = $2,
+           daily_salary = $3,
+           hourly_rate = $4
+       WHERE id = $5
+       RETURNING *`,
+      [name, role || null, daily_salary, hourly_rate, id]
     );
 
-    res.json({ message: 'Colaborador desactivado' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Colaborador no encontrado' });
+    }
+
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 module.exports = router;

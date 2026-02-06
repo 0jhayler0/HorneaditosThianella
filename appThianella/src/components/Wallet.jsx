@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react'
 
 const Wallet = () => {
-  const [balance, setBalance] = useState(0)
+  const [balances, setBalances] = useState({
+    caja_menor: 0,
+    caja_mayor: 0,
+    cuenta_bancaria: 0,
+    total: 0
+  })
   const [summary, setSummary] = useState({
     accounts_receivable: 0,
     debts: 0
@@ -25,7 +30,7 @@ const Wallet = () => {
   const fetchBalance = async () => {
     const res = await fetch('http://localhost:3000/api/wallet/balance')
     const data = await res.json()
-    setBalance(data.balance || 0)
+    setBalances(data)
   }
 
   const fetchSummary = async () => {
@@ -47,12 +52,35 @@ const Wallet = () => {
       {/* ===== RESUMEN ===== */}
       <div style={styles.summary}>
         <div style={styles.card}>
-          <h3>Saldo actual</h3>
+          <h3>Caja menor (Efectivo)</h3>
           <p style={{ ...styles.amount, color: '#16a34a' }}>
-            ${Number(balance).toFixed(2)}
+            ${Number(balances.caja_menor).toFixed(2)}
           </p>
         </div>
 
+        <div style={styles.card}>
+          <h3>Caja mayor (Cuenta David)</h3>
+          <p style={{ ...styles.amount, color: '#16a34a' }}>
+            ${Number(balances.caja_mayor).toFixed(2)}
+          </p>
+        </div>
+
+        <div style={styles.card}>
+          <h3>Cuenta bancaria</h3>
+          <p style={{ ...styles.amount, color: '#16a34a' }}>
+            ${Number(balances.cuenta_bancaria).toFixed(2)}
+          </p>
+        </div>
+
+        <div style={styles.card}>
+          <h3>Total</h3>
+          <p style={{ ...styles.amount, color: '#16a34a' }}>
+            ${Number(balances.total).toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div style={styles.summary}>
         <div style={styles.card}>
           <h3>Cuentas por cobrar</h3>
           <p style={{ ...styles.amount, color: '#ca8a04' }}>

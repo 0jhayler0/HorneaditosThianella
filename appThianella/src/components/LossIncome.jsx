@@ -1,38 +1,67 @@
 import React, { useState, useEffect } from 'react';
 
 const LossIncome = ({ onClose }) => {
-  const [availableProducts, setAvailableProducts] = useState([]);
-  const [productId, setProductId] = useState('');
+  const [type, setType] = useState('finished');
+  const [items, setItems] = useState([]);
+  const [itemId, setItemId] = useState('');
   const [quantity, setQuantity] = useState('');
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchItems();
+  }, [type]);
 
-  const fetchProducts = async () => {
-    const res = await fetch('http://localhost:3000/api/finishedproducts');
+  const fetchItems = async () => {
+    let url = '';
+
+    if (type === 'finished') url = 'http://localhost:3000/api/finishedproducts';
+    if (type === 'raw') url = 'http://localhost:3000/api/rawmaterials';
+    if (type === 'supply') url = 'http://localhost:3000/api/supplies';
+    if (type === 'usable') url = 'http://localhost:3000/api/usable';
+
+    const res = await fetch(url);
     const data = await res.json();
-    setAvailableProducts(data);
+    setItems(data);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!productId || quantity <= 0) {
+    if (!itemId || quantity <= 0) {
       alert('Datos inválidos');
       return;
     }
 
-    await fetch(
-      `http://localhost:3000/api/finishedproducts/${productId}/stock`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: Number(quantity) })
-      }
-    );
+    let url = '';
 
-    fetchProducts();
+    if (type === 'finished')
+      url = `http://localhost:3000/api/finishedproducts/${itemId}/stock`;
+
+    if (type === 'raw')
+      url = `http://localhost:3000/api/rawmaterials/${itemId}/stock`;
+
+    if (type === 'supply')
+      url = `http://localhost:3000/api/supplies/${itemId}/stock`;
+
+    if (type === 'usable')
+      url = `http://localhost:3000/api/usable/${itemId}/stock`;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: Number(quantity) })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Error');
+      return;
+    }
+
+    alert('Pérdida registrada');
+    setItemId('');
+    setQuantity('');
+    fetchItems();
     onClose();
   };
 
@@ -41,24 +70,29 @@ const LossIncome = ({ onClose }) => {
       <button onClick={onClose} className="closeButton">✕</button>
 
       <form className="formGroup" onSubmit={handleSubmit}>
-        <label>Producto</label>
-        <select
-          value={productId}
-          onChange={(e) => setProductId(e.target.value)}
-        >
+        <label>Tipo</label>
+        <select value={type} onChange={e => setType(e.target.value)}>
+          <option value="finished">Producto terminado</option>
+          <option value="raw">Materia prima</option>
+          <option value="supply">Insumo</option>
+          <option value="usable">Usable</option>
+        </select>
+
+        <label>Item</label>
+        <select value={itemId} onChange={e => setItemId(e.target.value)}>
           <option value="">Seleccionar...</option>
-          {availableProducts.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.name} (Stock: {p.stock})
+          {items.map(i => (
+            <option key={i.id} value={i.id}>
+              {i.name} (Stock: {i.stock})
             </option>
           ))}
         </select>
 
-        <label>Cantidad</label>
+        <label>Cantidad perdida</label>
         <input
           type="number"
           value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
+          onChange={e => setQuantity(e.target.value)}
           min="1"
         />
 

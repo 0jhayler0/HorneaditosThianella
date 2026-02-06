@@ -56,22 +56,29 @@ router.get('/summary', async (req, res) => {
 });
 
 /**
- * 💰 Obtener saldo actual
+ * 💰 Obtener saldos actuales de las cajas
  */
 router.get('/balance', async (req, res) => {
   try {
     const walletRes = await pool.query(`
-      SELECT balance
+      SELECT type, balance
       FROM company_wallet
-      ORDER BY id
-      LIMIT 1
+      ORDER BY type
     `);
 
-    if (walletRes.rows.length === 0) {
-      return res.json({ balance: 0 });
-    }
+    const balances = {
+      caja_menor: 0,
+      caja_mayor: 0,
+      cuenta_bancaria: 0,
+      total: 0
+    };
 
-    res.json({ balance: Number(walletRes.rows[0].balance) });
+    walletRes.rows.forEach(row => {
+      balances[row.type] = Number(row.balance || 0);
+      balances.total += Number(row.balance || 0);
+    });
+
+    res.json(balances);
 
   } catch (error) {
     console.error(error);

@@ -31,9 +31,9 @@ router.get('/', async (req, res) => {
  * Registrar pago / abono
  */
 router.post('/', async (req, res) => {
-  const { client_id, amount, notes } = req.body;
+  const { client_id, amount, notes, payment_method } = req.body;
 
-  if (!client_id || !amount || amount <= 0) {
+  if (!client_id || !amount || amount <= 0 || !['caja_menor', 'caja_mayor', 'cuenta_bancaria'].includes(payment_method)) {
     return res.status(400).json({ error: 'Datos inválidos' });
   }
 
@@ -60,9 +60,9 @@ router.post('/', async (req, res) => {
 
     // Guardar pago
     await client.query(
-      `INSERT INTO payments (client_id, amount, notes)
-       VALUES ($1, $2, $3)`,
-      [client_id, amount, notes || null]
+      `INSERT INTO payments (client_id, amount, notes, payment_method)
+       VALUES ($1, $2, $3, $4)`,
+      [client_id, amount, notes || null, payment_method]
     );
 
     // Restar deuda
@@ -73,19 +73,19 @@ router.post('/', async (req, res) => {
       [amount, client_id]
     );
 
-    // Actualizar saldo de la cartera de la empresa
+    // Actualizar saldo de la caja correspondiente
     await client.query(
       `UPDATE company_wallet
        SET balance = COALESCE(balance, 0) + $1
-       WHERE id = (SELECT id FROM company_wallet ORDER BY id LIMIT 1)`,
-      [amount]
+       WHERE type = $2`,
+      [amount, payment_method]
     );
 
     // Registrar movimiento en wallet_movements
     await client.query(
-      `INSERT INTO wallet_movements (amount, direction, type, reference_id, note)
-       VALUES ($1, 'in', 'pago_cliente', $2, 'Pago recibido de cliente')`,
-      [amount, client_id]
+      `INSERT INTO wallet_movements (amount, direction, type, reference_id, note, wallet_type)
+       VALUES ($1, 'in', 'pago_cliente', $2, 'Pago recibido de cliente', $3)`,
+      [amount, client_id, payment_method]
     );
 
     await client.query('COMMIT');
@@ -93,7 +93,8 @@ router.post('/', async (req, res) => {
     res.json({
       message: 'Pago registrado correctamente',
       client_id,
-      amount
+      amount,
+      payment_method
     });
 
   } catch (error) {

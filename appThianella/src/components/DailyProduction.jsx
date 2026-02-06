@@ -17,28 +17,49 @@ const DailyProduction = () => {
     try {
       const res = await fetch('http://localhost:3000/api/finishedproducts');
       const data = await res.json();
-      setAvailableProducts(data);
+
+      // 🔹 Agregar Masa Madre como opción virtual
+      const masaMadreOption = {
+        id: 'masa_madre',
+        name: 'Masa Madre'
+      };
+
+      setAvailableProducts([masaMadreOption, ...data]);
     } catch (err) {
       console.error(err);
     }
-  };                                                            
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!productId || quantity <= 0) {
+    const qty = parseInt(quantity) || 0;
+
+    if (!productId || qty <= 0) {
       alert('Completa todos los campos');
       return;
     }
 
     try {
+      let body;
+
+      // 🔹 Si eligió Masa Madre
+      if (productId === 'masa_madre') {
+        body = {
+          masa_madre: qty
+        };
+      } else {
+        body = {
+          finishedproduct_id: parseInt(productId),
+          quantity: qty,
+          masa_madre: 0
+        };
+      }
+
       const res = await fetch('http://localhost:3000/api/dailyproduction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          finishedproduct_id: parseInt(productId),
-          quantity: parseInt(quantity)
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
@@ -48,8 +69,10 @@ const DailyProduction = () => {
       }
 
       alert('Producción registrada correctamente');
+
       setProductId('');
       setQuantity('');
+
     } catch (err) {
       alert(err.message);
     }
@@ -83,9 +106,14 @@ const DailyProduction = () => {
           </div>
 
           <div className="formGroup">
-            <label>Cantidad producida</label>
+            <label>
+              {productId === 'masa_madre'
+                ? 'Cantidad de Masa Madre (unidades)'
+                : 'Cantidad producida'}
+            </label>
             <input
               type="number"
+              min="0"
               value={quantity}
               onChange={e => setQuantity(e.target.value)}
             />
@@ -93,8 +121,9 @@ const DailyProduction = () => {
 
           <button type="submit">Registrar Producción</button>
         </form>
-        <div  className={`createClientPanel ${showCreateRecipes ? 'visible' : ''}`}>
-              <CreateRecipes onClose={() => setShowCreateRecipes(false)} />
+
+        <div className={`createClientPanel ${showCreateRecipes ? 'visible' : ''}`}>
+          <CreateRecipes onClose={() => setShowCreateRecipes(false)} />
         </div>
       </div>
     </div>

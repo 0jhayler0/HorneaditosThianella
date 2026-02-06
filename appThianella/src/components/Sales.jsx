@@ -12,7 +12,7 @@ const Sales = () => {
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
-  const [paymentType, setPaymentType] = useState('cash');
+  const [paymentType, setPaymentType] = useState('caja_menor');
   const [discount, setDiscount] = useState(0);
 
   const [showCreateClient, setShowCreateClient] = useState(false);
@@ -177,10 +177,12 @@ const Sales = () => {
             ))}
           </select>
 
-          <label>Tipo de pago</label>
+          <label>Método de pago</label>
           <select value={paymentType} onChange={e => setPaymentType(e.target.value)}>
-            <option value="cash">Pago inmediato</option>
             <option value="credit">Pago a crédito</option>
+            <option value="caja_menor">Caja menor (Efectivo)</option>
+            <option value="caja_mayor">Caja mayor (Cuenta David)</option>
+            <option value="cuenta_bancaria">Cuenta bancaria</option>
           </select>
 
           <label>Descuento (%)</label>
