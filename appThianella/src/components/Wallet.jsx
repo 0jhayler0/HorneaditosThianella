@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import '../styles/content.css'
+import '../styles/Content.css'
 
 const Wallet = () => {
   const [balances, setBalances] = useState({
