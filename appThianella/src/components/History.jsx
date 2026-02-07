@@ -28,7 +28,7 @@ const History = () => {
 
   const fetchMonthlyHistory = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/history/monthly')
+      const res = await fetch('https://appthianella-backend.onrender.com/api/history/monthly')
       if (!res.ok) throw new Error('Error al cargar el historial')
       const data = await res.json()
       setMonthlyData(data)
@@ -46,7 +46,7 @@ const History = () => {
         if (value) queryParams.append(key, value)
       })
 
-      const res = await fetch(`http://localhost:3000/api/history/${endpoint}?${queryParams}`)
+      const res = await fetch(`https://appthianella-backend.onrender.com/api/history/${endpoint}?${queryParams}`)
       if (!res.ok) throw new Error(`Error al cargar ${endpoint}`)
       const data = await res.json()
 

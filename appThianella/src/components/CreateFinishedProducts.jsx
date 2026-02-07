@@ -17,7 +17,7 @@ const CreateFinishedProducts = ({ onClose }) => {
     e.preventDefault();
 
     try {
-      const res = await fetch('http://localhost:3000/api/finishedproducts', {
+      const res = await fetch('https://appthianella-backend.onrender.coms/api/finishedproducts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

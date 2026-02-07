@@ -15,7 +15,7 @@ const DailyProduction = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/finishedproducts');
+      const res = await fetch('https://appthianella-backend.onrender.com/api/finishedproducts');
       const data = await res.json();
 
       // 🔹 Agregar Masa Madre como opción virtual
@@ -56,7 +56,7 @@ const DailyProduction = () => {
         };
       }
 
-      const res = await fetch('http://localhost:3000/api/dailyproduction', {
+      const res = await fetch('https://appthianella-backend.onrender.com/api/dailyproduction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

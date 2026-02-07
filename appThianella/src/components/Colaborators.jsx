@@ -20,14 +20,14 @@ const Colaborators = () => {
   }, []);
 
   const fetchColaborators = async () => {
-    const res = await fetch('http://localhost:3000/api/colaborators');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/colaborators');
     setColaborators(await res.json());
   };
 
   const payDay = async (id) => {
     if (!window.confirm('Pagar el día?')) return;
 
-    await fetch('http://localhost:3000/api/colaborators/pay-day', {
+    await fetch('https://appthianella-backend.onrender.com/api/colaborators/pay-day', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ colaborator_id: id })
@@ -40,7 +40,7 @@ const Colaborators = () => {
     const hours = prompt('Cuántas horas trabajó?');
     if (!hours || hours <= 0) return;
 
-    const res = await fetch('http://localhost:3000/api/colaborators/pay-hours', {
+    const res = await fetch('https://appthianella-backend.onrender.com/api/colaborators/pay-hours', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ colaborator_id: id, hours: Number(hours) })
@@ -67,7 +67,7 @@ const Colaborators = () => {
   };
 
   const saveEdit = async () => {
-    const res = await fetch(`http://localhost:3000/api/colaborators/${editing.id}`, {
+    const res = await fetch(`https://appthianella-backend.onrender.com/api/colaborators/${editing.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

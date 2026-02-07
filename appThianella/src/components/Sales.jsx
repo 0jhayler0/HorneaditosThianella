@@ -27,17 +27,17 @@ const Sales = () => {
   }, []);
 
   const fetchClients = async () => {
-    const res = await fetch('http://localhost:3000/api/clients');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/clients');
     setClients(await res.json());
   };
 
   const fetchProducts = async () => {
-    const res = await fetch('http://localhost:3000/api/finishedproducts');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/finishedproducts');
     setAvailableProducts(await res.json());
   };
 
   const fetchSales = async () => {
-    const res = await fetch('http://localhost:3000/api/sales');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/sales');
     const data = await res.json();
     setSales(Array.isArray(data) ? data : []);
   };
@@ -90,7 +90,7 @@ const Sales = () => {
     });
 
     try {
-      const res = await fetch('http://localhost:3000/api/sales', {
+      const res = await fetch('https://appthianella-backend.onrender.com/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

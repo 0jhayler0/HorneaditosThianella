@@ -12,7 +12,7 @@ const ClientsList = ({ onClose }) => {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/clients');
+      const response = await fetch('https://appthianella-backend.onrender.com/api/clients');
       if (!response.ok) {
         throw new Error('Error al obtener clientes');
       }

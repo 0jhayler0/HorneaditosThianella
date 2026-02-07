@@ -13,10 +13,10 @@ const LossIncome = ({ onClose }) => {
   const fetchItems = async () => {
     let url = '';
 
-    if (type === 'finished') url = 'http://localhost:3000/api/finishedproducts';
-    if (type === 'raw') url = 'http://localhost:3000/api/rawmaterials';
-    if (type === 'supply') url = 'http://localhost:3000/api/supplies';
-    if (type === 'usable') url = 'http://localhost:3000/api/usable';
+    if (type === 'finished') url = 'https://appthianella-backend.onrender.com/api/finishedproducts';
+    if (type === 'raw') url = 'https://appthianella-backend.onrender.com/api/rawmaterials';
+    if (type === 'supply') url = 'https://appthianella-backend.onrender.com/api/supplies';
+    if (type === 'usable') url = 'https://appthianella-backend.onrender.com/api/usable';
 
     const res = await fetch(url);
     const data = await res.json();
@@ -34,16 +34,16 @@ const LossIncome = ({ onClose }) => {
     let url = '';
 
     if (type === 'finished')
-      url = `http://localhost:3000/api/finishedproducts/${itemId}/stock`;
+      url = `https://appthianella-backend.onrender.com/api/finishedproducts/${itemId}/stock`;
 
     if (type === 'raw')
-      url = `http://localhost:3000/api/rawmaterials/${itemId}/stock`;
+      url = `https://appthianella-backend.onrender.com/api/rawmaterials/${itemId}/stock`;
 
     if (type === 'supply')
-      url = `http://localhost:3000/api/supplies/${itemId}/stock`;
+      url = `https://appthianella-backend.onrender.com/api/supplies/${itemId}/stock`;
 
     if (type === 'usable')
-      url = `http://localhost:3000/api/usable/${itemId}/stock`;
+      url = `https://appthianella-backend.onrender.com/api/usable/${itemId}/stock`;
 
     const res = await fetch(url, {
       method: 'PUT',

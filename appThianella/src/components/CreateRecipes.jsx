@@ -15,9 +15,9 @@ const CreateRecipes = ({ onClose }) => {
 
   const fetchData = async () => {
     const [fp, rm, sp] = await Promise.all([
-      fetch('http://localhost:3000/api/finishedproducts').then(r => r.json()),
-      fetch('http://localhost:3000/api/rawmaterials').then(r => r.json()),
-      fetch('http://localhost:3000/api/supplies').then(r => r.json())
+      fetch('https://appthianella-backend.onrender.com/api/finishedproducts').then(r => r.json()),
+      fetch('https://appthianella-backend.onrender.com/api/rawmaterials').then(r => r.json()),
+      fetch('https://appthianella-backend.onrender.com/api/supplies').then(r => r.json())
     ])
 
     setFinishedProducts(fp)
@@ -64,7 +64,7 @@ const CreateRecipes = ({ onClose }) => {
       }))
     }
 
-    const res = await fetch('http://localhost:3000/api/recipes', {
+    const res = await fetch('https://appthianella-backend.onrender.com/api/recipes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

@@ -13,7 +13,7 @@ const Purchases = () => {
   useEffect(() => {
     if (!type) return;
 
-    fetch(`http://localhost:3000/api/purchases/items/${type}`)
+    fetch(`https://appthianella-backend.onrender.com/api/purchases/items/${type}`)
       .then(res => res.json())
       .then(data => setItems(data))
       .catch(err => console.error(err));
@@ -28,7 +28,7 @@ const Purchases = () => {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/purchases', {
+      const res = await fetch('https://appthianella-backend.onrender.com/api/purchases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

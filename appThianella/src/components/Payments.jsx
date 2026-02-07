@@ -9,7 +9,7 @@ const Payments = ({ onClose }) => {
   const [paymentMethod, setPaymentMethod] = useState('caja_menor');
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/clients')
+    fetch('https://appthianella-backend.onrender.com/api/clients')
       .then(res => res.json())
       .then(setClients);
   }, []);
@@ -22,7 +22,7 @@ const Payments = ({ onClose }) => {
       return;
     }
 
-    const res = await fetch('http://localhost:3000/api/payments', {
+    const res = await fetch('https://appthianella-backend.onrender.com/api/payments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -29,19 +29,19 @@ const Wallet = () => {
   }, [])
 
   const fetchBalance = async () => {
-    const res = await fetch('http://localhost:3000/api/wallet/balance')
+    const res = await fetch('https://appthianella-backend.onrender.com/api/wallet/balance')
     const data = await res.json()
     setBalances(data)
   }
 
   const fetchSummary = async () => {
-    const res = await fetch('http://localhost:3000/api/wallet/summary')
+    const res = await fetch('https://appthianella-backend.onrender.com/api/wallet/summary')
     const data = await res.json()
     setSummary(data)
   }
 
   const fetchMovements = async () => {
-    const res = await fetch('http://localhost:3000/api/wallet/movements')
+    const res = await fetch('https://appthianella-backend.onrender.com/api/wallet/movements')
     const data = await res.json()
     setMovements(Array.isArray(data) ? data : [])
   }

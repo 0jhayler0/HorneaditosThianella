@@ -14,12 +14,12 @@ const Exchanges = ({ onClose }) => {
   }, []);
 
   const fetchClients = async () => {
-    const res = await fetch('http://localhost:3000/api/clients');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/clients');
     setClients(await res.json());
   };
 
   const fetchProducts = async () => {
-    const res = await fetch('http://localhost:3000/api/finishedproducts');
+    const res = await fetch('https://appthianella-backend.onrender.com/api/finishedproducts');
     setAvailableProducts(await res.json());
   };
 
@@ -62,7 +62,7 @@ const Exchanges = ({ onClose }) => {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/exchanges', {
+      const res = await fetch('https://appthianella-backend.onrender.com/api/exchanges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

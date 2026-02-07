@@ -65,7 +65,7 @@ const Inventory = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/finishedproducts');
+      const response = await fetch('https://appthianella-backend.onrender.com/api/finishedproducts');
       const data = await response.json();
       setProducts(data);
     } catch (error) {
@@ -75,7 +75,7 @@ const Inventory = () => {
 
   const fetchRawMaterials = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/rawmaterials');
+      const response = await fetch('https://appthianella-backend.onrender.com/api/rawmaterials');
       const data = await response.json();
       setRawMaterials(data);
     } catch (error) {
@@ -85,7 +85,7 @@ const Inventory = () => {
 
   const fetchSupplies = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/supplies');
+      const response = await fetch('https://appthianella-backend.onrender.com/api/supplies');
       const data = await response.json();
       setSupplies(data);
     } catch (error) {
@@ -95,7 +95,7 @@ const Inventory = () => {
 
   const fetchUsable = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/usable');
+      const response = await fetch('https://appthianella-backend.onrender.com/api/usable');
       const data = await response.json();
       setUsable(data);
     } catch (error) {
@@ -106,7 +106,7 @@ const Inventory = () => {
   const handleSavePrice = async () => {
   try {
     const res = await fetch(
-      `http://localhost:3000/api/finishedproducts/${editingProduct.id}/price`,
+      `https://appthianella-backend.onrender.com/api/finishedproducts/${editingProduct.id}/price`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

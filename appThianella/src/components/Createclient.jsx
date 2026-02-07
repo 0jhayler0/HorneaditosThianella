@@ -30,7 +30,7 @@ const Createclient = ({ onClientCreated, onClose }) => {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/clients', {
+      const response = await fetch('https://appthianella-backend.onrender.com/api/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

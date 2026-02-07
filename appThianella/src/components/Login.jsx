@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import tipografiaHorneaditos from '../assets/tipografiaHorneaditos.png'
+import Footer from './Footer'
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('')
@@ -13,7 +14,7 @@ const Login = ({ onLogin }) => {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:3000/api/users', {
+      const response = await fetch('https://appthianella-backend.onrender.com/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,7 +37,7 @@ const Login = ({ onLogin }) => {
   }
 
   return (
-    <div className='content'>
+    <div className='loginContainer'>
       <img src={tipografiaHorneaditos} alt="logo" />
       <form onSubmit={handleSubmit} className='fromGroup'>
         <label htmlFor="usuario">Usuario:</label>
@@ -60,6 +61,7 @@ const Login = ({ onLogin }) => {
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
+      <Footer/>
     </div>
   )
 }

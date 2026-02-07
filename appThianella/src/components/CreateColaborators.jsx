@@ -15,7 +15,7 @@ const CreateColaborators = ({ onClose, onCreated }) => {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/colaborators', {
+      const res = await fetch('https://appthianella-backend.onrender.com/api/colaborators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

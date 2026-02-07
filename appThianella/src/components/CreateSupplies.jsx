@@ -18,7 +18,7 @@ const CreateSupplies = ({ onClose }) => {
         e.preventDefault();
 
         try {
-            const res = await fetch('http://localhost:3000/api/supplies', {
+            const res = await fetch('https://appthianella-backend.onrender.com/api/supplies', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(form)
