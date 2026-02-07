@@ -123,11 +123,9 @@ const Sales = () => {
   };
 
   return (
-    <div>
-      <VerticalMenuLayout menuItems={menuItems} />
-
-      <div className="content">
-        <form onSubmit={handleSubmit}>
+    <div className='content'>
+      <div>
+        <form className='formGroup' onSubmit={handleSubmit}>
           <h1>INGRESO DE VENTAS</h1>
 
           <label>Producto</label>
@@ -213,6 +211,8 @@ const Sales = () => {
       <div className={`createClientPanel ${showExchanges ? 'visible' : ''}`}>
         <Exchanges onClose={() => setShowExchanges(false)} />
       </div>
+      <VerticalMenuLayout menuItems={menuItems} />
+
     </div>
   );
 };

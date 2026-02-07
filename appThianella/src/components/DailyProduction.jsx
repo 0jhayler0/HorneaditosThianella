@@ -84,8 +84,6 @@ const DailyProduction = () => {
 
   return (
     <div>
-      <VerticalMenuLayout menuItems={menuItems} />
-
       <div className="content">
         <form onSubmit={handleSubmit}>
           <h1>PRODUCCIÓN DIARIA</h1>
@@ -126,6 +124,8 @@ const DailyProduction = () => {
           <CreateRecipes onClose={() => setShowCreateRecipes(false)} />
         </div>
       </div>
+      <VerticalMenuLayout menuItems={menuItems} />
+
     </div>
   );
 };

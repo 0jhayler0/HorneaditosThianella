@@ -132,8 +132,7 @@ const Inventory = () => {
   ];
 
   return (
-      <div>
-    <VerticalMenuLayout menuItems={menuItems} />
+      <div className='content'>
         <table>
           <thead>
             <tr>
@@ -522,6 +521,7 @@ const Inventory = () => {
         <div className={`createClientPanel ${showCreateFinishedProducts ? 'visible' : ''}`}>
           <CreateFinishedProducts onClose={() => { setShowCreateFinishedProducts(false); fetchProducts(); }} />
         </div>
+        <VerticalMenuLayout menuItems={menuItems} />
       </div>
   );
 }

@@ -95,11 +95,13 @@ const Colaborators = () => {
   ];
 
   return (
-    <VerticalMenuLayout menuItems={menuItems}>
       <div className="content">
-        <h1>Colaboradores</h1>
-
         <table>
+          <thead>
+            <th className='tableTittle' colSpan={5}>
+              Colaboradores
+              </th>
+          </thead>
           <thead>
             <tr>
               <th>Nombre</th>
@@ -169,8 +171,9 @@ const Colaborators = () => {
         <div className={`createClientPanel ${showCreateColaborators ? 'visible' : ''}`}>
           <CreateColaborators onClose={() => setShowCreateColaborators(false)} />
         </div>
+        <VerticalMenuLayout menuItems={menuItems} />
       </div>
-    </VerticalMenuLayout>
+    
   );
 };
 

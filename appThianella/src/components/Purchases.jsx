@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import VerticalMenuLayout from './VerticalMenuLayout';
 
 import '../styles/Content.css';
 
@@ -58,7 +59,8 @@ const Purchases = () => {
   };
 
   return (
-    <div className="content">
+    <div>
+      <div className='content'>
 
       <form className='formGroup' onSubmit={handleSubmit}>
 
@@ -131,6 +133,7 @@ const Purchases = () => {
         )}
 
       </form>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import '../styles/content.css'
 
 const Wallet = () => {
   const [balances, setBalances] = useState({
@@ -46,7 +47,7 @@ const Wallet = () => {
   }
 
   return (
-    <div style={styles.container}>
+    <div className='content' >
       <h1 style={styles.title}>Cartera de la Empresa</h1>
 
       {/* ===== RESUMEN ===== */}
@@ -133,7 +134,7 @@ const Wallet = () => {
 
 const styles = {
   container: {
-    padding: '24px',
+    padding: '30px',
     fontFamily: 'system-ui, sans-serif'
   },
   title: {

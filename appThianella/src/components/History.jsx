@@ -103,6 +103,7 @@ const History = () => {
   }
 
   const renderFilters = () => (
+    
     <div className="filters-container">
       <div className="filter-group">
         <label>Fecha inicio:</label>
@@ -354,9 +355,9 @@ const History = () => {
   if (error) return <div className="error">Error: {error}</div>
 
   return (
-    <div className="history-container">
+    <div className="content">
       <h1>Historial y Balances</h1>
-
+<br />
       <div className="tabs">
         <button
           className={activeTab === 'monthly' ? 'active' : ''}

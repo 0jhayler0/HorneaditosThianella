@@ -30,7 +30,7 @@ const ClientsList = ({ onClose }) => {
   if (error) return <div><p style={{ color: 'red' }}>Error: {error}</p></div>;
 
   return (
-    <div>
+    <div className="content">
       <button
         onClick={onClose}
         className='closeButton'

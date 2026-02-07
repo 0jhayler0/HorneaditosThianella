@@ -59,3 +59,25 @@
 .menuItemButton:active {
   background-color: var(--accentHoverColor);
 }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .verticalMenu {
+        width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .verticalMenu {
+        width: 120px;
+    }
+
+    .verticalMenuList {
+        padding: 15px;
+    }
+
+    .menuItemButton {
+        font-size: 12px;
+        padding: 10px 12px;
+    }
+}
