@@ -14,6 +14,7 @@ const History = () => {
   const [paymentsData, setPaymentsData] = useState([])
   const [clientPurchasesData, setClientPurchasesData] = useState([])
   const [balancesData, setBalancesData] = useState([])
+  const [dailyBalancesData, setDailyBalancesData] = useState([])
   const [filters, setFilters] = useState({
     start_date: '',
     end_date: '',
@@ -68,7 +69,10 @@ const History = () => {
           break
         case 'balances':
           // El endpoint 'balances' devuelve un objeto con propiedades: {company_wallet, client_balances, total_receivable}
-          setBalancesData(Array.isArray(data) ? data : (data?.client_balances || data?.value || []))
+          setBalancesData(data)
+          break
+        case 'daily-balances':
+          setDailyBalancesData(Array.isArray(data) ? data : data?.value || [])
           break
       }
     } catch (err) {
@@ -78,7 +82,12 @@ const History = () => {
 
   useEffect(() => {
     if (activeTab !== 'monthly') {
-      fetchDetailedData(activeTab)
+      if (activeTab === 'daily-balances') {
+        // daily-balances no usa filters
+        fetchDetailedData(activeTab)
+      } else {
+        fetchDetailedData(activeTab)
+      }
     }
   }, [activeTab, filters])
 
@@ -361,9 +370,9 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {Array.isArray(balancesData) && balancesData.length > 0 ? (
-          balancesData.map((balance) => (
-            <tr key={balance.date || balance.id}>
+        {Array.isArray(dailyBalancesData) && dailyBalancesData.length > 0 ? (
+          dailyBalancesData.map((balance) => (
+            <tr key={balance.date}>
               <td>{formatDate(balance.date)}</td>
               <td className="positive">{formatCurrency(balance.sales_total)}</td>
               <td className="positive">{formatCurrency(balance.payments_total)}</td>
@@ -433,8 +442,8 @@ const History = () => {
           Compras por Cliente
         </button>
         <button
-          className={activeTab === 'balances' ? 'active' : ''}
-          onClick={() => setActiveTab('balances')}
+          className={activeTab === 'daily-balances' ? 'active' : ''}
+          onClick={() => setActiveTab('daily-balances')}
         >
           Balances Diarios
         </button>
@@ -567,7 +576,7 @@ const History = () => {
         {activeTab === 'exchanges' && renderExchangesTable()}
         {activeTab === 'payments' && renderPaymentsTable()}
         {activeTab === 'client-purchases' && renderClientPurchasesTable()}
-        {activeTab === 'balances' && renderBalancesTable()}
+        {activeTab === 'daily-balances' && renderBalancesTable()}
       </div>
 
       {monthlyData.length === 0 && activeTab === 'monthly' && (

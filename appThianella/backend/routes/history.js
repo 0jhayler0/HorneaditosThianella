@@ -305,6 +305,78 @@ router.get('/client-purchases', async (req, res) => {
 /**
  * HISTORIAL DE SALDOS DE CARTERA
  */
+router.get('/daily-balances', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      WITH daily_sales AS (
+        SELECT 
+          DATE(sale_date) as date,
+          COALESCE(SUM(total_amount), 0) as total
+        FROM sales
+        GROUP BY DATE(sale_date)
+      ),
+      daily_payments AS (
+        SELECT 
+          DATE(payment_date) as date,
+          COALESCE(SUM(amount), 0) as total
+        FROM payments
+        GROUP BY DATE(payment_date)
+      ),
+      daily_purchases AS (
+        SELECT 
+          DATE(purchase_date) as date,
+          COALESCE(SUM(total_cost), 0) as total
+        FROM purchases
+        GROUP BY DATE(purchase_date)
+      ),
+      daily_returns AS (
+        SELECT 
+          DATE(return_date) as date,
+          COALESCE(SUM(total_amount), 0) as total
+        FROM returns
+        GROUP BY DATE(return_date)
+      ),
+      daily_exchanges AS (
+        SELECT 
+          DATE(exchange_date) as date,
+          COALESCE(SUM(difference), 0) as total
+        FROM exchanges
+        GROUP BY DATE(exchange_date)
+      ),
+      all_dates AS (
+        SELECT DISTINCT date FROM daily_sales
+        UNION
+        SELECT DISTINCT date FROM daily_payments
+        UNION
+        SELECT DISTINCT date FROM daily_purchases
+        UNION
+        SELECT DISTINCT date FROM daily_returns
+        UNION
+        SELECT DISTINCT date FROM daily_exchanges
+      )
+      SELECT 
+        d.date,
+        COALESCE(ds.total, 0) as sales_total,
+        COALESCE(dp.total, 0) as payments_total,
+        COALESCE(dpu.total, 0) as purchases_total,
+        COALESCE(dr.total, 0) as returns_total,
+        COALESCE(de.total, 0) as exchanges_total,
+        (COALESCE(ds.total, 0) + COALESCE(dp.total, 0) - COALESCE(dpu.total, 0) - COALESCE(dr.total, 0) + COALESCE(de.total, 0)) as net_cash_flow
+      FROM all_dates d
+      LEFT JOIN daily_sales ds ON d.date = ds.date
+      LEFT JOIN daily_payments dp ON d.date = dp.date
+      LEFT JOIN daily_purchases dpu ON d.date = dpu.date
+      LEFT JOIN daily_returns dr ON d.date = dr.date
+      LEFT JOIN daily_exchanges de ON d.date = de.date
+      ORDER BY d.date DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/balances', async (req, res) => {
   try {
     // Saldo de la cartera (tabla de cajas)
