@@ -52,22 +52,23 @@ const History = () => {
 
       switch (endpoint) {
         case 'purchases':
-          setPurchasesData(data)
+          setPurchasesData(Array.isArray(data) ? data : data?.value || [])
           break
         case 'returns':
-          setReturnsData(data)
+          setReturnsData(Array.isArray(data) ? data : data?.value || [])
           break
         case 'exchanges':
-          setExchangesData(data)
+          setExchangesData(Array.isArray(data) ? data : data?.value || [])
           break
         case 'payments':
-          setPaymentsData(data)
+          setPaymentsData(Array.isArray(data) ? data : data?.value || [])
           break
         case 'client-purchases':
-          setClientPurchasesData(data)
+          setClientPurchasesData(Array.isArray(data) ? data : data?.value || [])
           break
         case 'balances':
-          setBalancesData(data)
+          // El endpoint 'balances' devuelve un objeto con propiedades: {company_wallet, client_balances, total_receivable}
+          setBalancesData(Array.isArray(data) ? data : (data?.client_balances || data?.value || []))
           break
       }
     } catch (err) {
@@ -176,16 +177,20 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {purchasesData.map((purchase) => (
-          <tr key={purchase.id}>
-            <td>{formatDate(purchase.purchase_date)}</td>
-            <td>{purchase.type}</td>
-            <td>{purchase.item_name}</td>
-            <td>{purchase.packages}</td>
-            <td>{formatCurrency(purchase.unit_cost)}</td>
-            <td>{formatCurrency(purchase.total_cost)}</td>
-          </tr>
-        ))}
+        {Array.isArray(purchasesData) && purchasesData.length > 0 ? (
+          purchasesData.map((purchase) => (
+            <tr key={purchase.id}>
+              <td>{formatDate(purchase.purchase_date)}</td>
+              <td>{purchase.type}</td>
+              <td>{purchase.item_name}</td>
+              <td>{purchase.packages}</td>
+              <td>{formatCurrency(purchase.unit_cost)}</td>
+              <td>{formatCurrency(purchase.total_cost)}</td>
+            </tr>
+          ))
+        ) : (
+          <tr><td colSpan="6" style={{ textAlign: 'center' }}>Sin datos</td></tr>
+        )}
       </tbody>
     </table>
   )
@@ -201,20 +206,26 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {returnsData.map((return_) => (
-          <tr key={return_.id}>
-            <td>{formatDate(return_.return_date)}</td>
-            <td>{return_.client_name}</td>
-            <td>
-              {return_.products?.map((product, index) => (
-                <div key={index}>
-                  {product.product_name} x{product.quantity} ({formatCurrency(product.subtotal)})
-                </div>
-              ))}
-            </td>
-            <td>{formatCurrency(return_.total_amount)}</td>
-          </tr>
-        ))}
+        {Array.isArray(returnsData) && returnsData.length > 0 ? (
+          returnsData.map((return_) => (
+            <tr key={return_.id}>
+              <td>{formatDate(return_.return_date)}</td>
+              <td>{return_.client_name}</td>
+              <td>
+                {Array.isArray(return_.products) ? (
+                  return_.products.map((product, index) => (
+                    <div key={index}>
+                      {product.product_name} x{product.quantity} ({formatCurrency(product.subtotal)})
+                    </div>
+                  ))
+                ) : null}
+              </td>
+              <td>{formatCurrency(return_.total_amount)}</td>
+            </tr>
+          ))
+        ) : (
+          <tr><td colSpan="4" style={{ textAlign: 'center' }}>Sin datos</td></tr>
+        )}
       </tbody>
     </table>
   )
@@ -231,29 +242,37 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {exchangesData.map((exchange) => (
-          <tr key={exchange.id}>
-            <td>{formatDate(exchange.exchange_date)}</td>
-            <td>{exchange.client_name}</td>
-            <td>
-              {exchange.incoming_products?.filter(p => p).map((product, index) => (
-                <div key={index}>
-                  {product.product_name} x{product.quantity}
-                </div>
-              ))}
-            </td>
-            <td>
-              {exchange.outgoing_products?.filter(p => p).map((product, index) => (
-                <div key={index}>
-                  {product.product_name} x{product.quantity}
-                </div>
-              ))}
-            </td>
-            <td className={exchange.difference >= 0 ? 'positive' : 'negative'}>
-              {formatCurrency(exchange.difference)}
-            </td>
-          </tr>
-        ))}
+        {Array.isArray(exchangesData) && exchangesData.length > 0 ? (
+          exchangesData.map((exchange) => (
+            <tr key={exchange.id}>
+              <td>{formatDate(exchange.exchange_date)}</td>
+              <td>{exchange.client_name}</td>
+              <td>
+                {Array.isArray(exchange.incoming_products) ? (
+                  exchange.incoming_products.filter(p => p).map((product, index) => (
+                    <div key={index}>
+                      {product.product_name} x{product.quantity}
+                    </div>
+                  ))
+                ) : null}
+              </td>
+              <td>
+                {Array.isArray(exchange.outgoing_products) ? (
+                  exchange.outgoing_products.filter(p => p).map((product, index) => (
+                    <div key={index}>
+                      {product.product_name} x{product.quantity}
+                    </div>
+                  ))
+                ) : null}
+              </td>
+              <td className={exchange.difference >= 0 ? 'positive' : 'negative'}>
+                {formatCurrency(exchange.difference)}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr><td colSpan="5" style={{ textAlign: 'center' }}>Sin datos</td></tr>
+        )}
       </tbody>
     </table>
   )
@@ -271,16 +290,20 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {paymentsData.map((payment) => (
-          <tr key={payment.id}>
-            <td>{formatDate(payment.payment_date)}</td>
-            <td>{payment.client_name}</td>
-            <td>{formatCurrency(payment.amount)}</td>
-            <td>{payment.payment_method}</td>
-            <td>{payment.notes || '-'}</td>
-            <td>{formatCurrency(payment.client_debt)}</td>
-          </tr>
-        ))}
+        {Array.isArray(paymentsData) && paymentsData.length > 0 ? (
+          paymentsData.map((payment) => (
+            <tr key={payment.id}>
+              <td>{formatDate(payment.payment_date)}</td>
+              <td>{payment.client_name}</td>
+              <td>{formatCurrency(payment.amount)}</td>
+              <td>{payment.payment_method}</td>
+              <td>{payment.notes || '-'}</td>
+              <td>{formatCurrency(payment.client_debt)}</td>
+            </tr>
+          ))
+        ) : (
+          <tr><td colSpan="6" style={{ textAlign: 'center' }}>Sin datos</td></tr>
+        )}
       </tbody>
     </table>
   )
@@ -298,22 +321,28 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {clientPurchasesData.map((sale) => (
-          <tr key={sale.id}>
-            <td>{formatDate(sale.sale_date)}</td>
-            <td>{sale.client_name}</td>
-            <td>
-              {sale.products?.map((product, index) => (
-                <div key={index}>
-                  {product.product_name} x{product.quantity}
-                </div>
-              ))}
-            </td>
-            <td>{formatCurrency(sale.total_amount)}</td>
-            <td>{sale.payment_type}</td>
-            <td>{formatCurrency(sale.client_debt)}</td>
-          </tr>
-        ))}
+        {Array.isArray(clientPurchasesData) && clientPurchasesData.length > 0 ? (
+          clientPurchasesData.map((sale) => (
+            <tr key={sale.id}>
+              <td>{formatDate(sale.sale_date)}</td>
+              <td>{sale.client_name}</td>
+              <td>
+                {Array.isArray(sale.products) ? (
+                  sale.products.map((product, index) => (
+                    <div key={index}>
+                      {product.product_name} x{product.quantity}
+                    </div>
+                  ))
+                ) : null}
+              </td>
+              <td>{formatCurrency(sale.total_amount)}</td>
+              <td>{sale.payment_type}</td>
+              <td>{formatCurrency(sale.client_debt)}</td>
+            </tr>
+          ))
+        ) : (
+          <tr><td colSpan="6" style={{ textAlign: 'center' }}>Sin datos</td></tr>
+        )}
       </tbody>
     </table>
   )
@@ -332,21 +361,29 @@ const History = () => {
         </tr>
       </thead>
       <tbody>
-        {balancesData.map((balance) => (
-          <tr key={balance.date}>
-            <td>{formatDate(balance.date)}</td>
-            <td className="positive">{formatCurrency(balance.sales_total)}</td>
-            <td className="positive">{formatCurrency(balance.payments_total)}</td>
-            <td className="negative">{formatCurrency(Math.abs(balance.purchases_total))}</td>
-            <td className="negative">{formatCurrency(Math.abs(balance.returns_total))}</td>
-            <td className={balance.exchanges_total >= 0 ? 'positive' : 'negative'}>
-              {formatCurrency(balance.exchanges_total)}
-            </td>
-            <td className={balance.net_cash_flow >= 0 ? 'positive' : 'negative'}>
-              {formatCurrency(balance.net_cash_flow)}
+        {Array.isArray(balancesData) && balancesData.length > 0 ? (
+          balancesData.map((balance) => (
+            <tr key={balance.date || balance.id}>
+              <td>{formatDate(balance.date)}</td>
+              <td className="positive">{formatCurrency(balance.sales_total)}</td>
+              <td className="positive">{formatCurrency(balance.payments_total)}</td>
+              <td className="negative">{formatCurrency(Math.abs(balance.purchases_total))}</td>
+              <td className="negative">{formatCurrency(Math.abs(balance.returns_total))}</td>
+              <td className={balance.exchanges_total >= 0 ? 'positive' : 'negative'}>
+                {formatCurrency(balance.exchanges_total)}
+              </td>
+              <td className={balance.net_cash_flow >= 0 ? 'positive' : 'negative'}>
+                {formatCurrency(balance.net_cash_flow)}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+              No hay datos disponibles
             </td>
           </tr>
-        ))}
+        )}
       </tbody>
     </table>
   )
