@@ -4,6 +4,8 @@ import CreateClient from './Createclient';
 import ClientsList from './ClientsList';
 import Returns from './Returns';
 import Exchanges from './Exchanges';
+import EditClients from './EditClients';
+import EditSales from './EditSales';
 
 import '../styles/Content.css';
 
@@ -19,6 +21,8 @@ const Sales = () => {
   const [showClientsList, setShowClientsList] = useState(false);
   const [showReturns, setShowReturns] = useState(false);
   const [showExchanges, setShowExchanges] = useState(false);
+  const [showEditClients, setShowEditClients] = useState(false);
+  const [showEditSales, setShowEditSales] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -45,6 +49,8 @@ const Sales = () => {
   const menuItems = [
     { label: 'Ingresar clientes', onClick: () => setShowCreateClient(true) },
     { label: 'Lista de clientes', onClick: () => setShowClientsList(true) },
+    { label: '✏️ Editar clientes', onClick: () => setShowEditClients(true) },
+    { label: '✏️ Editar ventas', onClick: () => setShowEditSales(true) },
     { label: 'Devoluciones', onClick: () => setShowReturns(true) },
     { label: 'Cambios', onClick: () => setShowExchanges(true) },
   ];
@@ -211,6 +217,15 @@ const Sales = () => {
       <div className={`createClientPanel ${showExchanges ? 'visible' : ''}`}>
         <Exchanges onClose={() => setShowExchanges(false)} />
       </div>
+
+      <div className={`createClientPanel ${showEditClients ? 'visible' : ''}`}>
+        <EditClients onClose={() => setShowEditClients(false)} />
+      </div>
+
+      <div className={`createClientPanel ${showEditSales ? 'visible' : ''}`}>
+        <EditSales onClose={() => setShowEditSales(false)} />
+      </div>
+
       <VerticalMenuLayout menuItems={menuItems} />
 
     </div>

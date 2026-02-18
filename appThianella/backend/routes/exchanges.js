@@ -25,6 +25,19 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Datos incompletos para el cambio' });
   }
 
+  // Validar que el cliente existe
+  try {
+    const clientCheck = await pool.query(
+      'SELECT id FROM clients WHERE id = $1',
+      [client_id]
+    );
+    if (clientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
   const client = await pool.connect();
 
   try {
@@ -43,8 +56,12 @@ router.post('/', async (req, res) => {
 
     // 🔹 PRODUCTOS QUE ENTREGA EL CLIENTE (NO afectan stock)
     for (const prod of incoming) {
-      if (!prod.product_id || prod.quantity <= 0) {
-        throw new Error('Producto entrante inválido');
+      if (!prod.product_id || !prod.quantity || prod.quantity <= 0) {
+        throw new Error('Producto entrante inválido: cantidad debe ser > 0');
+      }
+
+      if (isNaN(prod.product_id) || isNaN(prod.quantity)) {
+        throw new Error('IDs y cantidades deben ser números válidos');
       }
 
       const result = await client.query(
@@ -70,8 +87,12 @@ router.post('/', async (req, res) => {
 
     // 🔸 PRODUCTOS QUE RECIBE EL CLIENTE (SÍ afectan stock)
     for (const prod of outgoing) {
-      if (!prod.product_id || prod.quantity <= 0) {
-        throw new Error('Producto saliente inválido');
+      if (!prod.product_id || !prod.quantity || prod.quantity <= 0) {
+        throw new Error('Producto saliente inválido: cantidad debe ser > 0');
+      }
+
+      if (isNaN(prod.product_id) || isNaN(prod.quantity)) {
+        throw new Error('IDs y cantidades deben ser números válidos');
       }
 
       const result = await client.query(
@@ -86,7 +107,7 @@ router.post('/', async (req, res) => {
       const { stock, price } = result.rows[0];
 
       if (stock < prod.quantity) {
-        throw new Error('Stock insuficiente para el cambio');
+        throw new Error(`Stock insuficiente para cambio: disponible ${stock}, solicitado ${prod.quantity}`);
       }
 
       const subtotal = price * prod.quantity;

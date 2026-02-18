@@ -33,8 +33,20 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { client_id, amount, notes, payment_method } = req.body;
 
-  if (!client_id || !amount || amount <= 0 || !['caja_menor', 'caja_mayor', 'cuenta_bancaria'].includes(payment_method)) {
+  if (!client_id || amount === undefined || amount === null) {
     return res.status(400).json({ error: 'Datos inválidos' });
+  }
+
+  if (isNaN(amount)) {
+    return res.status(400).json({ error: 'Monto debe ser un número válido' });
+  }
+
+  if (amount <= 0) {
+    return res.status(400).json({ error: 'Monto debe ser mayor a 0' });
+  }
+
+  if (!['caja_menor', 'caja_mayor', 'cuenta_bancaria'].includes(payment_method)) {
+    return res.status(400).json({ error: 'Método de pago inválido' });
   }
 
   const client = await pool.connect();

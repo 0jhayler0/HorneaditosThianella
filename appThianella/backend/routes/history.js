@@ -175,4 +175,326 @@ router.get('/monthly', async (req, res) => {
   }
 });
 
+/**
+ * HISTORIAL DE COMPRAS
+ */
+router.get('/purchases', async (req, res) => {
+  const { start_date, end_date, type } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        p.id,
+        p.purchase_date,
+        p.type,
+        CASE
+          WHEN p.type = 'rawmaterial' THEN rm.name
+          WHEN p.type = 'supply' THEN s.name
+          WHEN p.type = 'usable' THEN u.name
+          ELSE 'Desconocido'
+        END AS item_name,
+        p.packages_qty,
+        p.total_cost
+      FROM purchases p
+      LEFT JOIN rawmaterials rm ON rm.id = p.item_id AND p.type = 'rawmaterial'
+      LEFT JOIN supplies s ON s.id = p.item_id AND p.type = 'supply'
+      LEFT JOIN usable u ON u.id = p.item_id AND p.type = 'usable'
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      query += ` AND p.purchase_date >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      query += ` AND p.purchase_date <= $${paramIndex}`;
+      params.push(end_date);
+      paramIndex++;
+    }
+
+    if (type) {
+      query += ` AND p.type = $${paramIndex}`;
+      params.push(type);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY p.purchase_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * HISTORIAL DE DEVOLUCIONES
+ */
+router.get('/returns', async (req, res) => {
+  const { start_date, end_date, client_id } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        rd.id,
+        r.id AS return_id,
+        r.return_date,
+        c.name AS client_name,
+        fp.name AS product_name,
+        rd.quantity,
+        rd.unit_price,
+        rd.subtotal
+      FROM return_details rd
+      JOIN returns r ON r.id = rd.return_id
+      JOIN clients c ON c.id = r.client_id
+      JOIN finishedproducts fp ON fp.id = rd.product_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      query += ` AND r.return_date >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      query += ` AND r.return_date <= $${paramIndex}`;
+      params.push(end_date);
+      paramIndex++;
+    }
+
+    if (client_id) {
+      query += ` AND r.client_id = $${paramIndex}`;
+      params.push(client_id);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY r.return_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * HISTORIAL DE INTERCAMBIOS
+ */
+router.get('/exchanges', async (req, res) => {
+  const { start_date, end_date, client_id } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        ed.id,
+        e.id AS exchange_id,
+        e.exchange_date,
+        c.name AS client_name,
+        fp.name AS product_name,
+        ed.direction,
+        ed.quantity,
+        ed.unit_price,
+        ed.subtotal
+      FROM exchange_details ed
+      JOIN exchanges e ON e.id = ed.exchange_id
+      JOIN clients c ON c.id = e.client_id
+      JOIN finishedproducts fp ON fp.id = ed.product_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      query += ` AND e.exchange_date >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      query += ` AND e.exchange_date <= $${paramIndex}`;
+      params.push(end_date);
+      paramIndex++;
+    }
+
+    if (client_id) {
+      query += ` AND e.client_id = $${paramIndex}`;
+      params.push(client_id);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY e.exchange_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * HISTORIAL DE PAGOS
+ */
+router.get('/payments', async (req, res) => {
+  const { start_date, end_date, client_id, payment_method } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        p.id,
+        p.payment_date,
+        c.name AS client_name,
+        p.amount,
+        p.payment_method,
+        p.notes
+      FROM payments p
+      JOIN clients c ON c.id = p.client_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      query += ` AND p.payment_date >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      query += ` AND p.payment_date <= $${paramIndex}`;
+      params.push(end_date);
+      paramIndex++;
+    }
+
+    if (client_id) {
+      query += ` AND p.client_id = $${paramIndex}`;
+      params.push(client_id);
+      paramIndex++;
+    }
+
+    if (payment_method) {
+      query += ` AND p.payment_method = $${paramIndex}`;
+      params.push(payment_method);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY p.payment_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * HISTORIAL DE COMPRAS POR CLIENTE
+ */
+router.get('/client-purchases', async (req, res) => {
+  const { start_date, end_date, client_id } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        s.id,
+        s.sale_date,
+        c.name AS client_name,
+        fp.name AS product_name,
+        sd.quantity AS qty,
+        s.payment_type,
+        s.discount
+      FROM sale_details sd
+      JOIN sales s ON s.id = sd.sale_id
+      JOIN clients c ON c.id = s.client_id
+      JOIN finishedproducts fp ON fp.id = sd.product_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    let paramIndex = 1;
+
+    if (start_date) {
+      query += ` AND s.sale_date >= $${paramIndex}`;
+      params.push(start_date);
+      paramIndex++;
+    }
+
+    if (end_date) {
+      query += ` AND s.sale_date <= $${paramIndex}`;
+      params.push(end_date);
+      paramIndex++;
+    }
+
+    if (client_id) {
+      query += ` AND s.client_id = $${paramIndex}`;
+      params.push(client_id);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY s.sale_date DESC`;
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * HISTORIAL DE SALDOS DE CARTERA
+ */
+router.get('/balances', async (req, res) => {
+  try {
+    // Saldo de la cartera
+    const walletRes = await pool.query(`
+      SELECT type, balance, created_at
+      FROM company_wallet
+      ORDER BY created_at DESC
+      LIMIT 10
+    `);
+
+    // Saldos de clientes
+    const clientBalancesRes = await pool.query(`
+      SELECT
+        id,
+        name,
+        currentdbt,
+        created_at
+      FROM clients
+      WHERE active = true
+      ORDER BY currentdbt DESC
+    `);
+
+    // Saldo total de cuentas por cobrar
+    const totalReceivableRes = await pool.query(`
+      SELECT COALESCE(SUM(currentdbt), 0) AS total
+      FROM clients
+    `);
+
+    res.json({
+      company_wallet: walletRes.rows,
+      client_balances: clientBalancesRes.rows,
+      total_receivable: Number(totalReceivableRes.rows[0].total || 0)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

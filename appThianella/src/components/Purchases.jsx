@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import VerticalMenuLayout from './VerticalMenuLayout';
+import EditPurchases from './EditPurchases';
 
 import '../styles/Content.css';
 
@@ -9,6 +10,7 @@ const Purchases = () => {
   const [itemId, setItemId] = useState('');
   const [packagesQty, setPackagesQty] = useState('');
   const [unitCost, setUnitCost] = useState(0);
+  const [showEditPurchases, setShowEditPurchases] = useState(false);
 
   useEffect(() => {
     if (!type) return;
@@ -57,6 +59,10 @@ const Purchases = () => {
       alert('Error de conexión');
     }
   };
+
+  const menuItems = [
+    { label: '✏️ Editar compras', onClick: () => setShowEditPurchases(true) }
+  ];
 
   return (
     <div>
@@ -134,6 +140,12 @@ const Purchases = () => {
 
       </form>
       </div>
+
+      <div className={`createClientPanel ${showEditPurchases ? 'visible' : ''}`}>
+        <EditPurchases onClose={() => setShowEditPurchases(false)} />
+      </div>
+
+      <VerticalMenuLayout menuItems={menuItems} />
     </div>
   );
 };

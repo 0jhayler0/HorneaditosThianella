@@ -19,8 +19,17 @@ router.post('/', async (req, res) => {
     masa_madre = 0
   } = req.body;
 
-  if ((!finishedproduct_id && masa_madre <= 0) || quantity < 0) {
-    return res.status(400).json({ error: 'Datos inválidos' });
+  // Validaciones
+  if (quantity < 0 || masa_madre < 0) {
+    return res.status(400).json({ error: 'Cantidades no pueden ser negativas' });
+  }
+
+  if (isNaN(quantity) || isNaN(masa_madre)) {
+    return res.status(400).json({ error: 'Cantidad debe ser un número válido' });
+  }
+
+  if ((!finishedproduct_id && masa_madre <= 0) || (finishedproduct_id && quantity <= 0)) {
+    return res.status(400).json({ error: 'Debe ingresar cantidad válida' });
   }
 
   const client = await pool.connect();
@@ -32,6 +41,15 @@ router.post('/', async (req, res) => {
     // 🔵 PRODUCCIÓN NORMAL (CON RECETA)
     // ======================================================
     if (finishedproduct_id && quantity > 0) {
+      // Validar que el producto existe
+      const productRes = await client.query(
+        'SELECT id FROM finishedproducts WHERE id = $1',
+        [finishedproduct_id]
+      );
+
+      if (productRes.rows.length === 0) {
+        throw new Error('Producto no encontrado');
+      }
 
       const recipeRes = await client.query(
         'SELECT id FROM recipes WHERE finishedproductid = $1',

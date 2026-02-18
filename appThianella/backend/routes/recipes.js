@@ -17,10 +17,24 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Datos inválidos' });
   }
 
+  if (isNaN(finishedproductid)) {
+    return res.status(400).json({ error: 'ID de producto inválido' });
+  }
+
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
+
+    // Validar que el producto existe
+    const productCheck = await client.query(
+      `SELECT id FROM finishedproducts WHERE id = $1`,
+      [finishedproductid]
+    );
+
+    if (productCheck.rows.length === 0) {
+      throw new Error('Producto no encontrado');
+    }
 
     // 🔎 Ver si ya existe receta para este producto
     const recipeResult = await client.query(
@@ -59,6 +73,36 @@ router.post('/', async (req, res) => {
         item.quantity_per_unit <= 0
       ) {
         throw new Error('Ingrediente inválido');
+      }
+
+      if (isNaN(item.item_id) || isNaN(item.quantity_per_unit)) {
+        throw new Error('Valores numéricos inválidos en ingrediente');
+      }
+
+      // Validar que el item existe según su tipo
+      let itemExists = false;
+      if (item.item_type === 'rawmaterial') {
+        const rawCheck = await client.query(
+          'SELECT id FROM rawmaterials WHERE id = $1',
+          [item.item_id]
+        );
+        itemExists = rawCheck.rows.length > 0;
+      } else if (item.item_type === 'supply') {
+        const supplyCheck = await client.query(
+          'SELECT id FROM supplies WHERE id = $1',
+          [item.item_id]
+        );
+        itemExists = supplyCheck.rows.length > 0;
+      } else if (item.item_type === 'usable') {
+        const usableCheck = await client.query(
+          'SELECT id FROM usable WHERE id = $1',
+          [item.item_id]
+        );
+        itemExists = usableCheck.rows.length > 0;
+      }
+
+      if (!itemExists) {
+        throw new Error(`Ingrediente tipo "${item.item_type}" con ID ${item.item_id} no encontrado`);
       }
 
       await client.query(
@@ -120,6 +164,54 @@ router.get('/:finishedproductid', async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Eliminar receta
+ */
+router.delete('/:finishedproductid', async (req, res) => {
+  const { finishedproductid } = req.params;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Obtener el ID de la receta
+    const recipeResult = await client.query(
+      `SELECT id FROM recipes WHERE finishedproductid = $1`,
+      [finishedproductid]
+    );
+
+    if (recipeResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Receta no encontrada' });
+    }
+
+    const recipe_id = recipeResult.rows[0].id;
+
+    // Eliminar items de la receta
+    await client.query(
+      `DELETE FROM recipe_items WHERE recipe_id = $1`,
+      [recipe_id]
+    );
+
+    // Eliminar la receta
+    await client.query(
+      `DELETE FROM recipes WHERE id = $1`,
+      [recipe_id]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({ message: 'Receta eliminada correctamente' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 

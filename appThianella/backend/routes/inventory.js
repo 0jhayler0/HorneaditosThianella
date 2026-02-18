@@ -21,10 +21,18 @@ router.post('/finishedproducts', async (req, res) => {
     return res.status(400).json({ error: 'Datos obligatorios faltantes' });
   }
 
+  if (price <= 0) {
+    return res.status(400).json({ error: 'El precio debe ser mayor a 0' });
+  }
+
+  if (isNaN(price)) {
+    return res.status(400).json({ error: 'El precio debe ser un número válido' });
+  }
+
   try {
     const result = await pool.query(
       `INSERT INTO finishedproducts (name, price, stock) VALUES ($1, $2, $3) RETURNING *`,
-      [name, price, 0 || null]
+      [name, price, 0]
     );
 
     res.status(201).json(result.rows[0]);
@@ -59,6 +67,14 @@ router.post('/supplies', async (req, res) => {
 
   if (!name || !price || !uds) {
     return res.status(400).json({ error: 'Datos obligatorios faltantes' });
+  }
+
+  if (price <= 0 || uds <= 0) {
+    return res.status(400).json({ error: 'Precio y UDS deben ser mayores a 0' });
+  }
+
+  if (isNaN(price) || isNaN(uds)) {
+    return res.status(400).json({ error: 'Precio y UDS deben ser números válidos' });
   }
 
   try {
@@ -114,12 +130,28 @@ router.put('/supplies/:id/price', async (req, res) => {
   const { id } = req.params;
   const { price } = req.body;
 
-  const result = await pool.query(
-    'UPDATE supplies SET price = $1 WHERE id = $2 RETURNING *',
-    [price, id]
-  );
+  if (!price || price <= 0) {
+    return res.status(400).json({ error: 'Precio inválido' });
+  }
 
-  res.json(result.rows[0]);
+  if (isNaN(price)) {
+    return res.status(400).json({ error: 'El precio debe ser un número válido' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE supplies SET price = $1 WHERE id = $2 RETURNING *',
+      [price, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Insumo no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Descontar stock de producto terminado
@@ -325,21 +357,33 @@ router.put('/usable/:id/stock', async (req, res) => {
     return res.status(400).json({ error: 'Cantidad inválida' });
   }
 
-  const current = await pool.query(
-    'SELECT stock FROM usable WHERE id = $1',
-    [id]
-  );
-
-  if (current.rows[0].stock < quantity) {
-    return res.status(400).json({ error: 'Stock insuficiente' });
+  if (isNaN(quantity)) {
+    return res.status(400).json({ error: 'La cantidad debe ser un número válido' });
   }
 
-  const result = await pool.query(
-    'UPDATE usable SET stock = stock - $1 WHERE id = $2 RETURNING *',
-    [quantity, id]
-  );
+  try {
+    const current = await pool.query(
+      'SELECT stock FROM usable WHERE id = $1',
+      [id]
+    );
 
-  res.json(result.rows[0]);
+    if (current.rows.length === 0) {
+      return res.status(404).json({ error: 'Usable no encontrado' });
+    }
+
+    if (current.rows[0].stock < quantity) {
+      return res.status(400).json({ error: `Stock insuficiente: disponible ${current.rows[0].stock}, solicitado ${quantity}` });
+    }
+
+    const result = await pool.query(
+      'UPDATE usable SET stock = stock - $1 WHERE id = $2 RETURNING *',
+      [quantity, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 

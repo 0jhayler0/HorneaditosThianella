@@ -9,6 +9,19 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Datos inválidos' });
   }
 
+  // Validar que el cliente existe
+  try {
+    const clientCheck = await pool.query(
+      'SELECT id FROM clients WHERE id = $1',
+      [client_id]
+    );
+    if (clientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+
   const client = await pool.connect();
 
   try {
@@ -26,11 +39,16 @@ router.post('/', async (req, res) => {
 
     for (const prod of products) {
       if (!prod.product_id || !prod.quantity || prod.quantity <= 0) {
-        throw new Error('Producto inválido');
+        throw new Error('Producto inválido: cantidad debe ser > 0');
+      }
+
+      // Validar que es número válido
+      if (isNaN(prod.product_id) || isNaN(prod.quantity)) {
+        throw new Error('IDs y cantidades deben ser números válidos');
       }
 
       const productResult = await client.query(
-        'SELECT price FROM finishedproducts WHERE id = $1',
+        'SELECT price, stock FROM finishedproducts WHERE id = $1',
         [prod.product_id]
       );
 
@@ -38,9 +56,21 @@ router.post('/', async (req, res) => {
         throw new Error('Producto no encontrado');
       }
 
+      // Validar que hay stock suficiente para la devolución
+      const { stock } = productResult.rows[0];
+      if (stock < prod.quantity) {
+        throw new Error(`Stock insuficiente para devolver ${prod.quantity} unidades`);
+      }
+
       const price = productResult.rows[0].price;
       const subtotal = price * prod.quantity;
       total_amount += subtotal;
+
+      // Restaurar stock (devolución aumenta el stock)
+      await client.query(
+        'UPDATE finishedproducts SET stock = stock + $1 WHERE id = $2',
+        [prod.quantity, prod.product_id]
+      );
 
       await client.query(
         `INSERT INTO return_details

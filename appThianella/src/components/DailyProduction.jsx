@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import VerticalMenuLayout from './VerticalMenuLayout';
 import CreateRecipes from './CreateRecipes'
+import EditRecipes from './EditRecipes'
 import '../styles/Content.css';
 
 const DailyProduction = () => {
@@ -8,6 +9,7 @@ const DailyProduction = () => {
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [showCreateRecipes, setShowCreateRecipes] = useState(false);
+  const [showEditRecipes, setShowEditRecipes] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -79,7 +81,8 @@ const DailyProduction = () => {
   };
 
   const menuItems = [
-    { label: 'Crear nueva receta', onClick: () => setShowCreateRecipes(true) }
+    { label: 'Crear nueva receta', onClick: () => setShowCreateRecipes(true) },
+    { label: '✏️ Editar recetas', onClick: () => setShowEditRecipes(true) }
   ];
 
   return (
@@ -122,6 +125,10 @@ const DailyProduction = () => {
 
         <div className={`createClientPanel ${showCreateRecipes ? 'visible' : ''}`}>
           <CreateRecipes onClose={() => setShowCreateRecipes(false)} />
+        </div>
+
+        <div className={`createClientPanel ${showEditRecipes ? 'visible' : ''}`}>
+          <EditRecipes onClose={() => setShowEditRecipes(false)} />
         </div>
       </div>
       <VerticalMenuLayout menuItems={menuItems} />

@@ -27,8 +27,20 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const { name, role, daily_salary, hourly_rate = 0 } = req.body;
 
-  if (!name || !daily_salary) {
+  if (!name || daily_salary === undefined || daily_salary === null) {
     return res.status(400).json({ error: 'Datos incompletos' });
+  }
+
+  if (isNaN(daily_salary) || isNaN(hourly_rate)) {
+    return res.status(400).json({ error: 'Salarios deben ser números válidos' });
+  }
+
+  if (daily_salary <= 0) {
+    return res.status(400).json({ error: 'Salario diario debe ser mayor a 0' });
+  }
+
+  if (hourly_rate < 0) {
+    return res.status(400).json({ error: 'Tarifa horaria no puede ser negativa' });
   }
 
   try {
@@ -86,6 +98,10 @@ router.post('/pay-hours', async (req, res) => {
 
   if (!hours || hours <= 0) {
     return res.status(400).json({ error: 'Horas inválidas' });
+  }
+
+  if (isNaN(hours)) {
+    return res.status(400).json({ error: 'Horas debe ser un número válido' });
   }
 
   const client = await pool.connect();
@@ -149,6 +165,18 @@ router.put('/:id', async (req, res) => {
 
   if (!name || daily_salary == null || hourly_rate == null) {
     return res.status(400).json({ error: 'Datos inválidos' });
+  }
+
+  if (isNaN(daily_salary) || isNaN(hourly_rate)) {
+    return res.status(400).json({ error: 'Salarios deben ser números válidos' });
+  }
+
+  if (daily_salary <= 0) {
+    return res.status(400).json({ error: 'Salario diario debe ser mayor a 0' });
+  }
+
+  if (hourly_rate < 0) {
+    return res.status(400).json({ error: 'Tarifa horaria no puede ser negativa' });
   }
 
   try {

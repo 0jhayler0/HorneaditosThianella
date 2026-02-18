@@ -4,6 +4,23 @@ const pool = require('../src/db');
 const router = express.Router();
 
 /**
+ * Obtener todas las compras
+ */
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, type, item_id, packages_qty, total_cost, purchase_date 
+      FROM purchases 
+      ORDER BY purchase_date DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Obtener items según tipo
  * rawmaterials | supplies | usable
  */
@@ -149,6 +166,136 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: error.message });
   } finally {
     client.release();
+  }
+});
+
+/**
+ * Actualizar compra (cantidad)
+ */
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { type, item_id, packages_qty } = req.body;
+
+  const dbClient = await pool.connect();
+
+  try {
+    await dbClient.query('BEGIN');
+
+    // Obtener compra anterior
+    const oldPurchase = await dbClient.query(
+      `SELECT type, item_id, packages_qty, total_cost FROM purchases WHERE id = $1`,
+      [id]
+    );
+
+    if (oldPurchase.rows.length === 0) {
+      throw new Error('Compra no encontrada');
+    }
+
+    const { type: oldType, item_id: oldItemId, packages_qty: oldQty, total_cost: oldCost } = oldPurchase.rows[0];
+
+    // Revertir stock anterior
+    const oldTable = oldType === 'rawmaterials' ? 'rawmaterials' : oldType === 'supplies' ? 'supplies' : 'usable';
+    const oldItemData = await dbClient.query(
+      `SELECT packageweight, uds FROM ${oldTable} WHERE id = $1`,
+      [oldItemId]
+    );
+
+    if (oldItemData.rows.length > 0) {
+      const revertQty = oldType === 'usable' ? oldQty : (oldType === 'rawmaterials' ? oldQty * oldItemData.rows[0].packageweight : oldQty * oldItemData.rows[0].uds);
+      await dbClient.query(
+        `UPDATE ${oldTable} SET stock = stock - $1 WHERE id = $2`,
+        [revertQty, oldItemId]
+      );
+    }
+
+    // Agregar nuevo stock
+    const newTable = type === 'rawmaterials' ? 'rawmaterials' : type === 'supplies' ? 'supplies' : 'usable';
+    const newItemData = await dbClient.query(
+      `SELECT price, packageweight, uds, stock FROM ${newTable} WHERE id = $1`,
+      [item_id]
+    );
+
+    if (newItemData.rows.length === 0) {
+      throw new Error('Item no encontrado');
+    }
+
+    const { price, packageweight, uds } = newItemData.rows[0];
+    const newAddedStock = type === 'usable' ? packages_qty : (type === 'rawmaterials' ? packages_qty * packageweight : packages_qty * uds);
+    const newTotalCost = packages_qty * price;
+
+    await dbClient.query(
+      `UPDATE ${newTable} SET stock = stock + $1 WHERE id = $2`,
+      [newAddedStock, item_id]
+    );
+
+    // Actualizar compra
+    const result = await dbClient.query(
+      `UPDATE purchases SET type = $1, item_id = $2, packages_qty = $3, total_cost = $4 WHERE id = $5 RETURNING *`,
+      [type, item_id, packages_qty, newTotalCost, id]
+    );
+
+    await dbClient.query('COMMIT');
+    res.json(result.rows[0]);
+
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    dbClient.release();
+  }
+});
+
+/**
+ * Eliminar compra
+ */
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const dbClient = await pool.connect();
+
+  try {
+    await dbClient.query('BEGIN');
+
+    // Obtener compra
+    const purchase = await dbClient.query(
+      `SELECT type, item_id, packages_qty FROM purchases WHERE id = $1`,
+      [id]
+    );
+
+    if (purchase.rows.length === 0) {
+      throw new Error('Compra no encontrada');
+    }
+
+    const { type, item_id, packages_qty } = purchase.rows[0];
+
+    // Revertir stock
+    const table = type === 'rawmaterials' ? 'rawmaterials' : type === 'supplies' ? 'supplies' : 'usable';
+    const itemData = await dbClient.query(
+      `SELECT packageweight, uds FROM ${table} WHERE id = $1`,
+      [item_id]
+    );
+
+    if (itemData.rows.length > 0) {
+      const revertQty = type === 'usable' ? packages_qty : (type === 'rawmaterials' ? packages_qty * itemData.rows[0].packageweight : packages_qty * itemData.rows[0].uds);
+      await dbClient.query(
+        `UPDATE ${table} SET stock = stock - $1 WHERE id = $2`,
+        [revertQty, item_id]
+      );
+    }
+
+    // Eliminar compra
+    await dbClient.query(
+      `DELETE FROM purchases WHERE id = $1`,
+      [id]
+    );
+
+    await dbClient.query('COMMIT');
+    res.json({ message: 'Compra eliminada correctamente' });
+
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    dbClient.release();
   }
 });
 

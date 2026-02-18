@@ -158,4 +158,99 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * Actualizar venta (descuento)
+ */
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { discount, payment_type } = req.body;
+
+  try {
+    const saleResult = await pool.query(
+      `SELECT total_amount FROM sales WHERE id = $1`,
+      [id]
+    );
+
+    if (saleResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
+
+    const result = await pool.query(
+      `UPDATE sales SET discount = $1, payment_type = $2 WHERE id = $3 RETURNING *`,
+      [discount || 0, payment_type, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Eliminar venta
+ */
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const dbClient = await pool.connect();
+
+  try {
+    await dbClient.query('BEGIN');
+
+    // Obtener detalles de la venta
+    const saleDetails = await dbClient.query(
+      `SELECT product_id, quantity FROM sale_details WHERE sale_id = $1`,
+      [id]
+    );
+
+    // Restaurar stock
+    for (const detail of saleDetails.rows) {
+      await dbClient.query(
+        `UPDATE finishedproducts SET stock = stock + $1 WHERE id = $2`,
+        [detail.quantity, detail.product_id]
+      );
+    }
+
+    // Obtener info de la venta
+    const saleInfo = await dbClient.query(
+      `SELECT client_id, total_amount, payment_type FROM sales WHERE id = $1`,
+      [id]
+    );
+
+    if (saleInfo.rows.length === 0) {
+      throw new Error('Venta no encontrada');
+    }
+
+    const { client_id, total_amount, payment_type } = saleInfo.rows[0];
+
+    // Si fue a crédito, revertir la deuda
+    if (payment_type === 'credit') {
+      await dbClient.query(
+        `UPDATE clients SET currentdbt = COALESCE(currentdbt, 0) - $1 WHERE id = $2`,
+        [total_amount, client_id]
+      );
+    }
+
+    // Eliminar detalles de venta
+    await dbClient.query(
+      `DELETE FROM sale_details WHERE sale_id = $1`,
+      [id]
+    );
+
+    // Eliminar venta
+    await dbClient.query(
+      `DELETE FROM sales WHERE id = $1`,
+      [id]
+    );
+
+    await dbClient.query('COMMIT');
+    res.json({ message: 'Venta eliminada correctamente' });
+
+  } catch (err) {
+    await dbClient.query('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  } finally {
+    dbClient.release();
+  }
+});
+
 module.exports = router;
