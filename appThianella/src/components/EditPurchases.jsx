@@ -19,9 +19,9 @@ const EditPurchases = ({ onClose }) => {
     try {
       const [purchasesRes, rawRes, suppRes, usableRes] = await Promise.all([
         fetch('https://appthianella-backend.onrender.com/api/purchases'),
-        fetch('https://appthianella-backend.onrender.com/api/rawmaterials'),
-        fetch('https://appthianella-backend.onrender.com/api/supplies'),
-        fetch('https://appthianella-backend.onrender.com/api/usable')
+        fetch('https://appthianella-backend.onrender.com/api/purchases/items/rawmaterials'),
+        fetch('https://appthianella-backend.onrender.com/api/purchases/items/supplies'),
+        fetch('https://appthianella-backend.onrender.com/api/purchases/items/usable')
       ]);
 
       if (!purchasesRes.ok) throw new Error('Error al cargar compras');
@@ -34,12 +34,12 @@ const EditPurchases = ({ onClose }) => {
       const suppData = await suppRes.json();
       const usableData = await usableRes.json();
 
-      setPurchases(Array.isArray(purchasesData) ? purchasesData : []);
-      setRawMaterials(Array.isArray(rawData) ? rawData : []);
-      setSupplies(Array.isArray(suppData) ? suppData : []);
-      setUsables(Array.isArray(usableData) ? usableData : []);
+      setPurchases(Array.isArray(purchasesData) ? purchasesData : purchasesData?.value || []);
+      setRawMaterials(Array.isArray(rawData) ? rawData : rawData?.value || []);
+      setSupplies(Array.isArray(suppData) ? suppData : suppData?.value || []);
+      setUsables(Array.isArray(usableData) ? usableData : usableData?.value || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error cargando compras:', error);
       setPurchases([]);
     } finally {
       setLoading(false);
@@ -127,6 +127,20 @@ const EditPurchases = ({ onClose }) => {
   };
 
   if (loading) return <div><p>Cargando compras...</p></div>;
+
+  if (purchases.length === 0) {
+    return (
+      <div className='content'>
+        <button onClick={onClose} className='closeButton' title='Cerrar'>
+          ✕
+        </button>
+        <div style={{ padding: '20px' }}>
+          <h2>EDITAR COMPRAS</h2>
+          <p style={{ color: '#666', fontSize: '16px' }}>No hay compras registradas. Crea una nueva compra primero.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='content'>

@@ -16,9 +16,10 @@ const EditSales = ({ onClose }) => {
     try {
       const response = await fetch('https://appthianella-backend.onrender.com/api/sales');
       const data = await response.json();
-      setSales(data);
+      setSales(Array.isArray(data) ? data : data?.value || []);
     } catch (error) {
       console.error('Error:', error);
+      setSales([]);
     } finally {
       setLoading(false);
     }
@@ -99,6 +100,20 @@ const EditSales = ({ onClose }) => {
 
   if (loading) return <div><p>Cargando ventas...</p></div>;
 
+  if (sales.length === 0) {
+    return (
+      <div className='content'>
+        <button onClick={onClose} className='closeButton' title='Cerrar'>
+          ✕
+        </button>
+        <div style={{ padding: '20px' }}>
+          <h2>EDITAR VENTAS</h2>
+          <p style={{ color: '#666', fontSize: '16px' }}>No hay ventas registradas. Crea una nueva venta primero.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='content'>
       <button onClick={onClose} className='closeButton' title='Cerrar'>
@@ -163,7 +178,6 @@ const EditSales = ({ onClose }) => {
                         onChange={handleChange}
                         style={{ width: '100%' }}
                       >
-                        <option value='cash'>Efectivo</option>
                         <option value='credit'>Crédito</option>
                         <option value='caja_menor'>Caja Menor</option>
                         <option value='caja_mayor'>Caja Mayor</option>
