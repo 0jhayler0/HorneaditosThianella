@@ -23,7 +23,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', inventoryRouter);
-app.use('/api', clientsRouter);
+app.use('/api/clients', clientsRouter);
 app.use('/api/sales', salesRouter);
 app.use('/api/dailyProduction', dailyproductionRouter);
 app.use('/api/returns', returnsRouter);

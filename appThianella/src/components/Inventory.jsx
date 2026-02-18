@@ -278,7 +278,7 @@ const Inventory = () => {
                     className="saveButton"
                     onClick={async () => {
                       await fetch(
-                        `http://localhost:3000/api/rawmaterials/${editingRawMaterialFull.id}`,
+                        `https://appthianella-backend.onrender.com/api/rawmaterials/${editingRawMaterialFull.id}`,
                         {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
@@ -350,7 +350,7 @@ const Inventory = () => {
                   <button className='saveButton'
                     onClick={async () => {
                       await fetch(
-                        `http://localhost:3000/api/supplies/${editingSupply.id}/price`,
+                        `https://appthianella-backend.onrender.com/api/supplies/${editingSupply.id}/price`,
                         {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
@@ -405,7 +405,7 @@ const Inventory = () => {
                     className="saveButton"
                     onClick={async () => {
                       await fetch(
-                        `http://localhost:3000/api/supplies/${editingSupplyFull.id}`,
+                        `https://appthianella-backend.onrender.com/api/supplies/${editingSupplyFull.id}`,
                         {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
@@ -484,7 +484,7 @@ const Inventory = () => {
                 className="saveButton"
                 onClick={async () => {
                   await fetch(
-                    `http://localhost:3000/api/usable/${editingUsableFull.id}`,
+                    `https://appthianella-backend.onrender.com/api/usable/${editingUsableFull.id}`,
                     {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
