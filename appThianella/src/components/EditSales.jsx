@@ -33,7 +33,7 @@ const EditSales = ({ onClose }) => {
     setEditingId(sale.id);
     setFormData({
       discount: sale.discount || 0,
-      payment_type: sale.payment_type || 'cash'
+      payment_type: sale.payment_type || 'caja_menor'
     });
   };
 

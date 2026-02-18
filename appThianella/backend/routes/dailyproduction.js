@@ -125,15 +125,33 @@ router.post('/', async (req, res) => {
     // ======================================================
     if (masa_madre > 0) {
 
-      // 🔎 Buscar Harina
+      // 🔎 Buscar Harina (con opción de especificar ID)
+      let harinaId = null;
+      
+      if (req.body.flour_id) {
+        // Si especifica el ID, usarlo directamente
+        harinaId = req.body.flour_id;
+      } else {
+        // Si no, buscar flexible (ILIKE para permitir variaciones)
+        const harinaRes = await client.query(
+          `SELECT id, stock FROM rawmaterials 
+           WHERE LOWER(name) ILIKE '%harina%' 
+           LIMIT 1`
+        );
+        
+        if (harinaRes.rows.length === 0) {
+          throw new Error('No se encontró Harina. Especifica flour_id en el request.');
+        }
+        harinaId = harinaRes.rows[0].id;
+      }
+
       const harinaRes = await client.query(
-        `SELECT id, stock FROM rawmaterials 
-         WHERE LOWER(name) LIKE '%Harina de Trigo%' 
-         LIMIT 1`
+        `SELECT stock FROM rawmaterials WHERE id = $1`,
+        [harinaId]
       );
 
       if (harinaRes.rows.length === 0) {
-        throw new Error('No se encontró Harina');
+        throw new Error('Harina no encontrada');
       }
 
       const harina = harinaRes.rows[0];
@@ -146,21 +164,28 @@ router.post('/', async (req, res) => {
       // ➖ Descontar Harina
       await client.query(
         'UPDATE rawmaterials SET stock = stock - $1 WHERE id = $2',
-        [harinaNecesaria, harina.id]
+        [harinaNecesaria, harinaId]
       );
 
-      // 🔎 Buscar Masa Madre
-      const masaMadreRes = await client.query(
-        `SELECT id FROM rawmaterials 
-         WHERE LOWER(name) = 'masa madre'
-         LIMIT 1`
-      );
+      // 🔎 Buscar Masa Madre (con opción de especificar ID)
+      let masaMadreId = null;
 
-      if (masaMadreRes.rows.length === 0) {
-        throw new Error('No existe la materia prima Masa Madre');
+      if (req.body.masa_madre_id) {
+        // Si especifica el ID, usarlo directamente
+        masaMadreId = req.body.masa_madre_id;
+      } else {
+        // Si no, buscar flexible
+        const masaMadreRes = await client.query(
+          `SELECT id FROM rawmaterials 
+           WHERE LOWER(name) ILIKE '%masa madre%'
+           LIMIT 1`
+        );
+
+        if (masaMadreRes.rows.length === 0) {
+          throw new Error('No existe la materia prima Masa Madre. Especifica masa_madre_id en el request.');
+        }
+        masaMadreId = masaMadreRes.rows[0].id;
       }
-
-      const masaMadreId = masaMadreRes.rows[0].id;
 
       // ➕ Aumentar Masa Madre en gramos
       const masaMadreProducida = masa_madre * 1000; // gramos

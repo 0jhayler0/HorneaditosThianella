@@ -14,7 +14,7 @@ router.get('/monthly', async (req, res) => {
         TO_CHAR(sale_date, 'YYYY-MM') AS month,
         COUNT(*) AS total_sales,
         SUM(total_amount) AS total_sales_amount,
-        SUM(CASE WHEN payment_type = 'cash' THEN total_amount ELSE 0 END) AS cash_sales,
+        SUM(CASE WHEN payment_type != 'credit' THEN total_amount ELSE 0 END) AS cash_sales,
         SUM(CASE WHEN payment_type = 'credit' THEN total_amount ELSE 0 END) AS credit_sales
       FROM sales
       GROUP BY TO_CHAR(sale_date, 'YYYY-MM')
@@ -186,7 +186,9 @@ router.get('/purchases', async (req, res) => {
         purchase_date,
         type,
         item_id,
-        packages_qty,
+        packages,
+        units,
+        unit_cost,
         total_cost
       FROM purchases
       ORDER BY purchase_date DESC
@@ -305,12 +307,11 @@ router.get('/client-purchases', async (req, res) => {
  */
 router.get('/balances', async (req, res) => {
   try {
-    // Saldo de la cartera (tabla simplificada)
+    // Saldo de la cartera (tabla de cajas)
     const walletRes = await pool.query(`
-      SELECT id, balance
+      SELECT type, balance
       FROM company_wallet
-      ORDER BY id DESC
-      LIMIT 1
+      ORDER BY type
     `);
 
     // Saldos de clientes
@@ -320,7 +321,6 @@ router.get('/balances', async (req, res) => {
         name,
         currentdbt
       FROM clients
-      WHERE active = true
       ORDER BY currentdbt DESC
     `);
 
@@ -330,8 +330,13 @@ router.get('/balances', async (req, res) => {
       FROM clients
     `);
 
+    const walletBalances = {};
+    walletRes.rows.forEach(row => {
+      walletBalances[row.type] = Number(row.balance || 0);
+    });
+
     res.json({
-      company_wallet: walletRes.rows[0] || { balance: 0 },
+      company_wallet: walletBalances,
       client_balances: clientBalancesRes.rows,
       total_receivable: Number(totalReceivableRes.rows[0].total || 0)
     });

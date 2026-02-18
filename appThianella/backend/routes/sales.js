@@ -46,13 +46,13 @@ router.get('/', async (req, res) => {
  * Crear venta
  */
 router.post('/', async (req, res) => {
-  const { client_id, products, payment_method, discount = 0 } = req.body;
+  const { client_id, products, payment_type, discount = 0, status = 'pending', notes } = req.body;
 
   if (
     !client_id ||
     !Array.isArray(products) ||
     products.length === 0 ||
-    !['credit', 'caja_menor', 'caja_mayor', 'cuenta_bancaria'].includes(payment_method)
+    !['credit', 'caja_menor', 'caja_mayor', 'cuenta_bancaria'].includes(payment_type)
   ) {
     return res.status(400).json({ error: 'Datos inválidos' });
   }
@@ -65,10 +65,10 @@ router.post('/', async (req, res) => {
     let total_amount = 0;
 
     const saleResult = await dbClient.query(
-      `INSERT INTO sales (client_id, total_amount, payment_type, discount)
-       VALUES ($1, 0, $2, $3)
+      `INSERT INTO sales (client_id, total_amount, payment_type, discount, status, notes)
+       VALUES ($1, 0, $2, $3, $4, $5)
        RETURNING id`,
-      [client_id, payment_method, discount]
+      [client_id, payment_type, discount, status, notes || null]
     );
 
     const sale_id = saleResult.rows[0].id;
@@ -121,7 +121,7 @@ router.post('/', async (req, res) => {
       [final_total, sale_id]
     );
 
-    if (payment_method === 'credit') {
+    if (payment_type === 'credit') {
       await dbClient.query(
         `UPDATE clients
          SET currentdbt = COALESCE(currentdbt, 0) + $1,
@@ -135,14 +135,14 @@ router.post('/', async (req, res) => {
         `UPDATE company_wallet
          SET balance = COALESCE(balance, 0) + $1
          WHERE type = $2`,
-        [final_total, payment_method]
+        [final_total, payment_type]
       );
 
       // Registrar movimiento
       await dbClient.query(
         `INSERT INTO wallet_movements (amount, direction, type, reference_id, note, wallet_type)
          VALUES ($1, 'in', 'venta', $2, 'Venta al contado', $3)`,
-        [final_total, sale_id, payment_method]
+        [final_total, sale_id, payment_type]
       );
     }
 
@@ -159,11 +159,11 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * Actualizar venta (descuento)
+ * Actualizar venta (descuento, status, notas)
  */
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { discount, payment_type } = req.body;
+  const { discount, payment_type, status, notes } = req.body;
 
   try {
     const saleResult = await pool.query(
@@ -176,8 +176,8 @@ router.put('/:id', async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE sales SET discount = $1, payment_type = $2 WHERE id = $3 RETURNING *`,
-      [discount || 0, payment_type, id]
+      `UPDATE sales SET discount = $1, payment_type = $2, status = $3, notes = $4 WHERE id = $5 RETURNING *`,
+      [discount || 0, payment_type || 'credit', status || 'pending', notes || null, id]
     );
 
     res.json(result.rows[0]);

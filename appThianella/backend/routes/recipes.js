@@ -80,6 +80,7 @@ router.post('/', async (req, res) => {
       }
 
       // Validar que el item existe según su tipo
+      // Solo se permiten rawmaterial y supply según la tabla recipe_items
       let itemExists = false;
       if (item.item_type === 'rawmaterial') {
         const rawCheck = await client.query(
@@ -93,12 +94,8 @@ router.post('/', async (req, res) => {
           [item.item_id]
         );
         itemExists = supplyCheck.rows.length > 0;
-      } else if (item.item_type === 'usable') {
-        const usableCheck = await client.query(
-          'SELECT id FROM usable WHERE id = $1',
-          [item.item_id]
-        );
-        itemExists = usableCheck.rows.length > 0;
+      } else {
+        throw new Error(`Tipo de ingrediente inválido. Solo se permiten: 'rawmaterial', 'supply'`);
       }
 
       if (!itemExists) {

@@ -36,7 +36,7 @@ const Purchases = () => {
         body: JSON.stringify({
           type,
           item_id: parseInt(itemId),
-          packages_qty: parseFloat(packagesQty)
+          packages: parseFloat(packagesQty)
         })
       });
 

@@ -69,7 +69,7 @@ const EditPurchases = ({ onClose }) => {
     setFormData({
       type: purchase.type,
       item_id: purchase.item_id,
-      packages_qty: purchase.packages_qty
+      packages: purchase.packages
     });
   };
 
@@ -77,7 +77,7 @@ const EditPurchases = ({ onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'packages_qty' ? parseFloat(value) : value
+      [name]: name === 'packages' ? parseFloat(value) : value
     }));
   };
 
@@ -211,8 +211,8 @@ const EditPurchases = ({ onClose }) => {
                     <td>
                       <input
                         type='number'
-                        name='packages_qty'
-                        value={formData.packages_qty}
+                        name='packages'
+                        value={formData.packages}
                         onChange={handleChange}
                         step='1'
                         style={{ width: '100%' }}
@@ -241,7 +241,7 @@ const EditPurchases = ({ onClose }) => {
                     <td>{purchase.id}</td>
                     <td>{purchase.type}</td>
                     <td>{getItemName(purchase.type, purchase.item_id)}</td>
-                    <td>{purchase.packages_qty}</td>
+                    <td>{purchase.packages}</td>
                     <td>${purchase.total_cost.toFixed(2)}</td>
                     <td>{new Date(purchase.purchase_date).toLocaleDateString()}</td>
                     <td>

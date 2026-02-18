@@ -10,10 +10,11 @@ router.get('/summary', async (req, res) => {
   try {
     // 💰 saldo actual empresa
     const walletRes = await pool.query(`
-      SELECT balance
+      SELECT 
+        type,
+        balance
       FROM company_wallet
-      ORDER BY id
-      LIMIT 1
+      ORDER BY type
     `);
 
     // 🧾 cuentas por cobrar (deudas clientes)
@@ -28,11 +29,11 @@ router.get('/summary', async (req, res) => {
       FROM payments
     `);
 
-    // 📈 ventas contado
+    // 📈 ventas al contado (no a crédito)
     const cashSalesRes = await pool.query(`
       SELECT COALESCE(SUM(total_amount), 0) AS total
       FROM sales
-      WHERE payment_type = 'cash'
+      WHERE payment_type != 'credit'
     `);
 
     // 👷 pagos a colaboradores
@@ -41,8 +42,16 @@ router.get('/summary', async (req, res) => {
       FROM colaborator_payments
     `);
 
+    const walletBalances = {};
+    let totalBalance = 0;
+    walletRes.rows.forEach(row => {
+      walletBalances[row.type] = Number(row.balance || 0);
+      totalBalance += Number(row.balance || 0);
+    });
+
     res.json({
-      balance: Number(walletRes.rows[0]?.balance || 0),
+      balances: walletBalances,
+      total_balance: totalBalance,
       accounts_receivable: Number(receivableRes.rows[0].total),
       client_payments: Number(paymentsRes.rows[0].total),
       cash_sales: Number(cashSalesRes.rows[0].total),
@@ -118,9 +127,13 @@ router.post('/init', async (req, res) => {
       return res.status(400).json({ error: 'La cartera ya existe' });
     }
 
+    // Crear las 3 cajas
     await pool.query(`
-      INSERT INTO company_wallet (balance)
-      VALUES (0)
+      INSERT INTO company_wallet (type, balance)
+      VALUES 
+        ('caja_menor', 0),
+        ('caja_mayor', 0),
+        ('cuenta_bancaria', 0)
     `);
 
     res.json({ message: 'Cartera inicializada correctamente' });

@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, type, item_id, packages_qty, total_cost, purchase_date 
+      SELECT id, type, item_id, packages, units, unit_cost, total_cost, purchase_date 
       FROM purchases 
       ORDER BY purchase_date DESC
     `);
@@ -52,9 +52,9 @@ router.get('/items/:type', async (req, res) => {
  * Registrar compra
  */
 router.post('/', async (req, res) => {
-  const { type, item_id, packages_qty } = req.body;
+  const { type, item_id, packages } = req.body;
 
-  if (!type || !item_id || !packages_qty || packages_qty <= 0) {
+  if (!type || !item_id || !packages || packages <= 0) {
     return res.status(400).json({ error: 'Datos inválidos' });
   }
 
@@ -78,8 +78,8 @@ router.post('/', async (req, res) => {
 
       const { price, packageweight } = result.rows[0];
 
-      const addedStock = packages_qty * packageweight; // gramos/ml
-      const totalCost = packages_qty * price;
+      const addedStock = packages * packageweight; // gramos/ml
+      const totalCost = packages * price;
 
       await client.query(
         `UPDATE rawmaterials
@@ -87,6 +87,13 @@ router.post('/', async (req, res) => {
              lastpurchase = NOW()
          WHERE id = $2`,
         [addedStock, item_id]
+      );
+
+      // Insertar en tabla purchases
+      await client.query(
+        `INSERT INTO purchases (type, item_id, packages, units, unit_cost, total_cost)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [type, item_id, packages, 1, price, totalCost]
       );
 
       // Actualizar saldo de la cartera de la empresa
@@ -120,14 +127,21 @@ router.post('/', async (req, res) => {
 
       const { price, uds } = result.rows[0];
 
-      const addedStock = packages_qty * uds;
-      const totalCost = packages_qty * price;
+      const addedStock = packages * uds;
+      const totalCost = packages * price;
 
       await client.query(
         `UPDATE supplies
          SET stock = stock + $1
          WHERE id = $2`,
         [addedStock, item_id]
+      );
+
+      // Insertar en tabla purchases
+      await client.query(
+        `INSERT INTO purchases (type, item_id, packages, units, unit_cost, total_cost)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [type, item_id, packages, uds, price, totalCost]
       );
 
       // Actualizar saldo de la cartera de la empresa
@@ -152,7 +166,14 @@ router.post('/', async (req, res) => {
         `UPDATE usable
          SET stock = stock + $1
          WHERE id = $2`,
-        [packages_qty, item_id]
+        [packages, item_id]
+      );
+
+      // Insertar en tabla purchases
+      await client.query(
+        `INSERT INTO purchases (type, item_id, packages, units, unit_cost, total_cost)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [type, item_id, packages, 1, 0, 0]
       );
     }
 
@@ -174,7 +195,7 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { type, item_id, packages_qty } = req.body;
+  const { type, item_id, packages } = req.body;
 
   const dbClient = await pool.connect();
 
@@ -183,7 +204,7 @@ router.put('/:id', async (req, res) => {
 
     // Obtener compra anterior
     const oldPurchase = await dbClient.query(
-      `SELECT type, item_id, packages_qty, total_cost FROM purchases WHERE id = $1`,
+      `SELECT type, item_id, packages, units, total_cost FROM purchases WHERE id = $1`,
       [id]
     );
 
@@ -191,7 +212,7 @@ router.put('/:id', async (req, res) => {
       throw new Error('Compra no encontrada');
     }
 
-    const { type: oldType, item_id: oldItemId, packages_qty: oldQty, total_cost: oldCost } = oldPurchase.rows[0];
+    const { type: oldType, item_id: oldItemId, packages: oldPackages, units: oldUnits, total_cost: oldCost } = oldPurchase.rows[0];
 
     // Revertir stock anterior
     const oldTable = oldType === 'rawmaterials' ? 'rawmaterials' : oldType === 'supplies' ? 'supplies' : 'usable';
@@ -201,7 +222,7 @@ router.put('/:id', async (req, res) => {
     );
 
     if (oldItemData.rows.length > 0) {
-      const revertQty = oldType === 'usable' ? oldQty : (oldType === 'rawmaterials' ? oldQty * oldItemData.rows[0].packageweight : oldQty * oldItemData.rows[0].uds);
+      const revertQty = oldType === 'usable' ? oldPackages : (oldType === 'rawmaterials' ? oldPackages * oldItemData.rows[0].packageweight : oldPackages * oldItemData.rows[0].uds);
       await dbClient.query(
         `UPDATE ${oldTable} SET stock = stock - $1 WHERE id = $2`,
         [revertQty, oldItemId]
@@ -220,8 +241,8 @@ router.put('/:id', async (req, res) => {
     }
 
     const { price, packageweight, uds } = newItemData.rows[0];
-    const newAddedStock = type === 'usable' ? packages_qty : (type === 'rawmaterials' ? packages_qty * packageweight : packages_qty * uds);
-    const newTotalCost = packages_qty * price;
+    const newAddedStock = type === 'usable' ? packages : (type === 'rawmaterials' ? packages * packageweight : packages * uds);
+    const newTotalCost = packages * price;
 
     await dbClient.query(
       `UPDATE ${newTable} SET stock = stock + $1 WHERE id = $2`,
@@ -230,8 +251,8 @@ router.put('/:id', async (req, res) => {
 
     // Actualizar compra
     const result = await dbClient.query(
-      `UPDATE purchases SET type = $1, item_id = $2, packages_qty = $3, total_cost = $4 WHERE id = $5 RETURNING *`,
-      [type, item_id, packages_qty, newTotalCost, id]
+      `UPDATE purchases SET type = $1, item_id = $2, packages = $3, units = $4, unit_cost = $5, total_cost = $6 WHERE id = $7 RETURNING *`,
+      [type, item_id, packages, type === 'supplies' ? uds : 1, price, newTotalCost, id]
     );
 
     await dbClient.query('COMMIT');
@@ -257,7 +278,7 @@ router.delete('/:id', async (req, res) => {
 
     // Obtener compra
     const purchase = await dbClient.query(
-      `SELECT type, item_id, packages_qty FROM purchases WHERE id = $1`,
+      `SELECT type, item_id, packages FROM purchases WHERE id = $1`,
       [id]
     );
 
@@ -265,7 +286,7 @@ router.delete('/:id', async (req, res) => {
       throw new Error('Compra no encontrada');
     }
 
-    const { type, item_id, packages_qty } = purchase.rows[0];
+    const { type, item_id, packages } = purchase.rows[0];
 
     // Revertir stock
     const table = type === 'rawmaterials' ? 'rawmaterials' : type === 'supplies' ? 'supplies' : 'usable';
@@ -275,7 +296,7 @@ router.delete('/:id', async (req, res) => {
     );
 
     if (itemData.rows.length > 0) {
-      const revertQty = type === 'usable' ? packages_qty : (type === 'rawmaterials' ? packages_qty * itemData.rows[0].packageweight : packages_qty * itemData.rows[0].uds);
+      const revertQty = type === 'usable' ? packages : (type === 'rawmaterials' ? packages * itemData.rows[0].packageweight : packages * itemData.rows[0].uds);
       await dbClient.query(
         `UPDATE ${table} SET stock = stock - $1 WHERE id = $2`,
         [revertQty, item_id]

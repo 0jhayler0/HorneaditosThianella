@@ -116,7 +116,7 @@ const Sales = () => {
 
       alert('Venta guardada correctamente');
       setProducts([]);
-      setPaymentType('cash');
+      setPaymentType('caja_menor');
       setDiscount(0);
       e.target.reset();
       fetchSales();
